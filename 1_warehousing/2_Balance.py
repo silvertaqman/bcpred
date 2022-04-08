@@ -14,10 +14,10 @@ Features = list(X.columns)
 
 # SMOTE
 from imblearn.over_sampling import SMOTE
-smote = SMOTE(ratio='minority',random_state=123)
+smote = SMOTE(random_state=123)
 Xs, ys = smote.fit_resample(X.values, y)
     
 # Export smoted, balanced data
 cancer = pd.DataFrame(Xs,columns=Features)
 cancer['Class'] = ys # add class column
-cancer.to_csv('Mix_BreastCancer_srbal', index=False)
+cancer.to_csv('Mix_BreastCancer_srbal.csv', index=False)
