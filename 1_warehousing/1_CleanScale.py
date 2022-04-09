@@ -4,7 +4,7 @@ import pandas as pd
 import sklearn
 
 #Load data
-cancer = pd.read_csv("Mix_BreastCancer.csv")
+cancer = pd.read_csv("Mix_BreastCancer.csv.gz")
 #Data Warehousing and Feature selection
 ## Change name of ID and class columns
 cancer.columns = list(cancer.columns[:-2])+["ProtID","Class"]
@@ -35,7 +35,7 @@ sf = []
 ## Create and export the working dataframe: scaled and reduced
 cancer_sr = pd.DataFrame(Xdata,columns=sf)
 cancer_sr['Class'] = y
-cancer_sr.to_csv("./Mix_BreastCancer_sr.csv", index=False)
+cancer_sr.to_csv("./Mix_BreastCancer_sr.csv.gz", index=False)
 
 '''
 Not applied yet: Remove dependent columns by PCA: 8709 to 322

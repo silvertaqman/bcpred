@@ -5,7 +5,7 @@ import sklearn
 import imblearn
 
 # Load data
-cancer = pd.read_csv("Mix_BreastCancer_sr.csv")
+cancer = pd.read_csv("./Mix_BreastCancer_sr.csv.gz")
 
 #Select data with an X to y model
 y = cancer['Class']
@@ -20,4 +20,4 @@ Xs, ys = smote.fit_resample(X.values, y)
 # Export smoted, balanced data
 cancer = pd.DataFrame(Xs,columns=Features)
 cancer['Class'] = ys # add class column
-cancer.to_csv('Mix_BreastCancer_srbal.csv', index=False)
+cancer.to_csv('../2_training/Mix_BreastCancer_srbal.csv', index=False)
