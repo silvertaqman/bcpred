@@ -30,10 +30,6 @@ from sklearn.svm import SVC
 svm = SVC(kernel = 'rbf', C=10, gamma=.1).fit(X,y)
 #Calidad de la prediccion
 svm.score(Xt, yt)
-# Metrics
-# yp = svm.predict(Xt)
-# np.mean(yp == yt)
-# Feature Subset selection mejora el accuracy de 0.5 a 0.769
 
 # class labels are given by dual coefficient's sign
 sv_labels = svm.dual_coef_.ravel() > 0
