@@ -2,50 +2,67 @@
 import numpy as np
 import pandas as pd
 import sklearn
+import joblib
 
 #Load data
-cancer = pd.read_csv("Mix_BreastCancer.csv.gz")
+cancer = pd.read_csv("./Mix_BC.csv.gz")
 #Data Warehousing and Feature selection
 ## Change name of ID and class columns
 cancer.columns = list(cancer.columns[:-2])+["ProtID","Class"]
 ## Reordering IDs and Class columns
 cancer.insert(0, 'ProtID', cancer.pop('ProtID'))
+
 ## MinMax Scale to numerical data
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 scaler.fit(cancer.iloc[0:377, 3:8744])
 scaled = scaler.fit_transform(cancer.iloc[0:377, 3:8744])
 cancer_s = pd.DataFrame(scaled, columns = cancer.iloc[0:377, 3:8744].columns)
+### exporting scaler: loadable with joblib.load("minmax.pkl"")
+joblib.dump(scaler, "minmax.pkl") 
 
-## Remove duplicated values
+## Remove duplicated values (No duplicates)
 cancer_s.drop_duplicates(keep=False, inplace=True)
 
-## Remove invariant columns
+## Mathematical notation
 y = cancer_s['Class']
 X = cancer_s.drop('Class', axis = 1)
-Features = list(X.columns)
+F = list(X.columns)
 
-### Selected features
-from sklearn.feature_selection import VarianceThreshold
+## Remove invariant columns 
+from sklearn.feature_selection import VarianceThreshold, SelectKBest, chi2
 selector= VarianceThreshold()
-Xdata = selector.fit_transform(X.values)
-sf = []
-[sf.append(Features[i]) for i in selector.get_support(indices=True)]
+X = selector.fit_transform(X.values)
+### export invariant features
+FS = []
+[FS.append(F[i]) for i in selector.get_support(indices=True)]
+with open("invariant_features.txt","w") as f:
+	[f.write("%s\n" % i) for i in list(set(F) - set(FS))]
+
+F = FS
+
+## Feature selection
+selector = SelectKBest(chi2, k=300)
+X = selector.fit_transform(X, y)
+### export unselected features
+FS = []
+[FS.append(F[i]) for i in selector.get_support(indices=True)]
+with open("univariant_feature_selection.txt","w") as f:
+	[f.write("%s\n" % i) for i in list(set(F) - set(FS))]
 
 ## Create and export the working dataframe: scaled and reduced
-cancer_sr = pd.DataFrame(Xdata,columns=sf)
+cancer_sr = pd.DataFrame(X, columns=FS)
 cancer_sr['Class'] = y
-cancer_sr.to_csv("./Mix_BreastCancer_sr.csv.gz", index=False)
-
+cancer_sr.to_csv("./Mix_BC_sr.csv", index=False)
 '''
-Not applied yet: Remove dependent columns by PCA: 8709 to 322
-y = cancer_s_reduced_selected['Class']
-X = cancer_s_reduced_selected.drop('Class', axis = 1)
-Features = list(X.columns)
+## Principal Component Analysis (from 8708 to 332 to explain 0.97 of variance)
 from sklearn.decomposition import PCA
-pca = PCA(.96)
-pca.fit(cancer_s_reduced_selected)
-reduced = pca.transform(cancer_s_reduced_selected)
-cancer_s_reduced_selected_independent = pd.DataFrame(reduced, columns =cancer_s.columns)
-No se como obtener los nombres de dichas columnas. 
+pcaModel = PCA(0.97)
+X = pcaModel.fit_transform(X)
+# create the resulted dataframe
+PCAfeatures =[]
+for p in range(nPCA):
+    PCAfeatures.append('PCA'+str(p+1))
+
+PCAfeatures
 '''
