@@ -8,6 +8,7 @@ import scipy
 import IPython
 import sklearn
 import mglearn
+import joblib
 
 # Data loading
 bc = pd.read_csv("./Mix_BC_srbal.csv.gz")

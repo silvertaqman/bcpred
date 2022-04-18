@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import sklearn
 import mglearn
+import joblib
 
 #load data
 bc = pd.read_csv("Mix_BC_srbal.csv.gz")
