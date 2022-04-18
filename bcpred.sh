@@ -6,6 +6,6 @@ pigz ./Mix_BC_sr.csv
 python3 2_Balance.py
 cd ../2_training
 pigz ./Mix_BC_srbal.csv
-python3 ./3_TrainValidate.py
+python3 ./3_Train.py
 
 
