@@ -7,7 +7,7 @@ import mglearn
 import joblib
 
 #load data
-bc = pd.read_csv("Mix_BC_srbal.csv.gz")
+bc = pd.read_csv("../Mix_BC_srbal.csv.gz")
 bc_input = bc.iloc[0:466, 0:300]
 bc_output = bc['Class']
 
