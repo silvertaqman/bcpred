@@ -41,7 +41,7 @@ with open("invariant_features.txt","w") as f:
 
 F = FS
 
-## Feature selection
+## Feature Subset Selection
 selector = SelectKBest(chi2, k=300)
 X = selector.fit_transform(X, y)
 ### export unselected features
@@ -58,11 +58,4 @@ cancer_sr.to_csv("./Mix_BC_sr.csv", index=False)
 ## Principal Component Analysis (from 8708 to 332 to explain 0.97 of variance)
 from sklearn.decomposition import PCA
 pcaModel = PCA(0.97)
-X = pcaModel.fit_transform(X)
-# create the resulted dataframe
-PCAfeatures =[]
-for p in range(nPCA):
-    PCAfeatures.append('PCA'+str(p+1))
-
-PCAfeatures
 '''
