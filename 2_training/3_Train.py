@@ -25,9 +25,8 @@ cw = {i:j for i,j in zip(np.unique(y), weights)}
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
-svm = SVC(kernel = 'rbf', C=9, gamma=0.00315).fit(X,y)
-svmlin = SVC(kernel="linear",random_state=74,gamma='scale',class_weight=cw).fit(X,y)
-svmrbf = SVC(kernel = 'rbf', random_state=74,gamma='scale',class_weight=cw).fit(X,y)
+svmlin = SVC(kernel='linear',random_state=74,gamma='scale',class_weight=cw).fit(X,y)
+svmrbf = SVC(kernel = 'rbf', random_state=74,C=25,gamma=0.303,class_weight=cw).fit(X,y)
 lr = LogisticRegression(solver='lbfgs',random_state=74,class_weight=cw).fit(X,y)
 mlp = MLPClassifier(hidden_layer_sizes= (20), random_state = 74, max_iter=50000, shuffle=False).fit(X,y)
 
