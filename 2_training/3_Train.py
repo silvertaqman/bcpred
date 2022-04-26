@@ -104,11 +104,12 @@ Problema dual: maximizas el valor de la ganancia
 models = [svmlin, svmrbf, lr, mlp]
 # K-fold Validation
 from sklearn.model_selection import cross_val_score as cvs
-kfv = [cvs(p, X,y,cv=5) for p in models]
+kfv_acc = [cvs(p, X,y,cv=5,n_jobs=-1) for p in models]
+kfv_auc = [cvs(p, X,y,cv=5,scoring='roc_auc',n_jobs=-1) for p in models]
 # K-stratified Validation
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=5,shuffle=True,random_state=74)
-ksfv = [cvs(p, X,y,cv=kfold) for p in models]
+ksfv = [cvs(p, X,y,cv=kfold, n_jobs=-1) for p in models]
 cols = ['fold'+str(i) for i in range(1,6)]
 # Export results
 metrics = pd.DataFrame(kfv+ksfv, columns = cols)
@@ -116,6 +117,7 @@ metrics['validation'] = 4*['kfold']+4*['strat']
 metrics['mean_acc'] = [np.mean(i) for i in kfv+ksfv]
 metrics['mean_sd'] = [np.std(i) for i in kfv+ksfv]
 metrics['method'] = 2*['svmlin', 'svmrbf', 'lr', 'mlp']
+metrics['roc_auc'] = 
 metrics.to_csv('./validation_metrics.csv')
 
 # Metrics (Every model)
