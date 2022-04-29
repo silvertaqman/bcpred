@@ -33,7 +33,7 @@ svmrbf = SVC(**gs.best_params_).fit(X,y)
 results = pd.DataFrame(gs.cv_results_)
 Features = list(results.columns)
 params = pd.DataFrame(results,columns=Features)
-params.to_csv('rbf.csv', index=False)
+params.to_csv('./gridsearch/rbf.csv', index=False)
 joblib.dump(svmrbf, "./models/bc_svmrbf.pkl")
 
 # Linear
@@ -51,7 +51,7 @@ svmlin = SVC(**gs.best_params_).fit(X,y)
 results = pd.DataFrame(gs.cv_results_)
 Features = list(results.columns)
 params = pd.DataFrame(results,columns=Features)
-params.to_csv('linear.csv', index=False)
+params.to_csv('./gridsearch/linear.csv', index=False)
 joblib.dump(svmlin, "./models/bc_svmlin.pkl")
 
 # Logistic regression
@@ -71,7 +71,7 @@ lr = LR(**gs.best_params_).fit(X,y)
 results = pd.DataFrame(gs.cv_results_)
 Features = list(results.columns)
 params = pd.DataFrame(results,columns=Features)
-params.to_csv('logistic.csv', index=False)
+params.to_csv('./gridsearch/logistic.csv', index=False)
 joblib.dump(lr, "./models/bc_lr.pkl")
 # A second option could be added with the second best lr params
 
@@ -95,7 +95,7 @@ mlp = MLPC(**gs.best_params_).fit(X,y)
 results = pd.DataFrame(gs.cv_results_)
 Features = list(results.columns)
 params = pd.DataFrame(results,columns=Features)
-params.to_csv('mlp.csv', index=False)
+params.to_csv('./gridsearch/mlp.csv', index=False)
 joblib.dump(mlp, "./models/bc_mlp.pkl")
 '''
 Problema dual: maximizas el valor de la ganancia
@@ -103,24 +103,25 @@ Problema dual: maximizas el valor de la ganancia
 # Validation
 models = [svmlin, svmrbf, lr, mlp]
 # K-fold Validation
-from sklearn.model_selection import cross_val_score as cvs
-kfv_acc = [cvs(p, X,y,cv=5,n_jobs=-1) for p in models]
-kfv_auc = [cvs(p, X,y,cv=5,scoring='roc_auc',n_jobs=-1) for p in models]
+from sklearn.model_selection import cross_validate as cv
+from sklearn.metrics import make_scorer, accuracy_score, recall_score, roc_auc_score
+scoring = ['accuracy','recall','roc_auc']
+kfv = [cv(p, X,y,cv=5,scoring= scoring, n_jobs=-1) for p in models]
 # K-stratified Validation
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=5,shuffle=True,random_state=74)
-ksfv = [cvs(p, X,y,cv=kfold, n_jobs=-1) for p in models]
-cols = ['fold'+str(i) for i in range(1,6)]
-# Export results
-metrics = pd.DataFrame(kfv+ksfv, columns = cols)
-metrics['validation'] = 4*['kfold']+4*['strat']
-metrics['mean_acc'] = [np.mean(i) for i in kfv+ksfv]
-metrics['mean_sd'] = [np.std(i) for i in kfv+ksfv]
-metrics['method'] = 2*['svmlin', 'svmrbf', 'lr', 'mlp']
-metrics['roc_auc'] = 
+ksfv = [cv(p, X,y,cv=kfold,scoring= scoring, n_jobs=-1) for p in models]
+
+metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
+
+# Exporting metrics to csv
+metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(0,len(metrics)))))
+metrics['folds'] = 8*['fold'+str(i+1) for i in range(5)]
+models = ['svmlin', 'svmrbf', 'lr', 'mlp']
+metrics['model'] = np.append(np.repeat(models, 5),np.repeat(models, 5))
+metrics['method'] = np.repeat(['kfold','stratified'],20)
 metrics.to_csv('./validation_metrics.csv')
 
-# Metrics (Every model)
 # Make predictions
 yp = [svmlin.predict(Xt), svmrbf.predict(Xt), lr.predict(Xt), mlp.predict(Xt)]
 # Create a classification report

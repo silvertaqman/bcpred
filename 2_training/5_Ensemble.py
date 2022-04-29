@@ -42,7 +42,7 @@ models = [svmlin, svmrbf, lr, mlp]
 from sklearn.ensemble import BaggingClassifier as ba
 clf = [ba(base_estimator = p, n_estimators=10).fit(X, y) for p in models]
 
-# [recall_score(p.predict(Xt),yt) for p in models]
+# [recall_score(p.predict(Xt),yt) for p in clf]
 # Solo aumento el accuracy del svm lineal, al resto reduce o iguala
 # con recall lo mismo, pero mejoro el de LR
 
@@ -67,14 +67,14 @@ from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 estimators = [('linear',CalibratedClassifierCV(svmlin)),('radial',CalibratedClassifierCV(svmrbf)),('logistic',lr),('multi',mlp)]
 hard_ensemble = VotingClassifier(estimators, voting='hard').fit(X,y)
-ensemble.score(Xt,yt)
+hard_ensemble.score(Xt,yt)
 
 # Average/Soft Voting
 
 average_prediction = average_predictions = sum([p.predict(Xt) for p in models])/4.0
 
 soft_ensemble = VotingClassifier(estimators, voting='soft').fit(X,y)
-ensemble.score(Xt,yt)
+yp = soft_ensemble.predict(Xt)
 
 
 
