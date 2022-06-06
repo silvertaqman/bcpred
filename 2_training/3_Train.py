@@ -77,6 +77,13 @@ joblib.dump(lr, "./models/bc_lr.pkl")
 
 # Multilayer perceptron
 # 4) 
+
+'''
+hidden_layer = [x for x in itertools.product((128*4,128*3,128*2,128*1,128/2,128/4,128/8), repeat=2)]  # repeat indica el numero de capas.
+Cambiar el 128, buscar la curva de sobreajuste para los 4. 
+Agregar desviacion estandar
+'''
+
 param_grid = {
         'hidden_layer_sizes': [ (20,), (100,), (50,50,50), (50,100,50)],
         'activation': ['logistic', 'tanh', 'relu'],
