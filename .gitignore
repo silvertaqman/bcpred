@@ -5,4 +5,8 @@
 /home/adonis/bcpred/2_training/outliers.R
 /home/adonis/bcpred/1_warehousing/invariant_features.txt
 /home/adonis/bcpred/1_warehousing/minmax.pkl
-/home/adonis/bcpred/2_training/gridsearch/*.pdf
+/home/adonis/bcpred/2_training/gridsearch/contour.pdf
+/home/adonis/bcpred/2_training/gridsearch/firstsecond.pdf
+/home/adonis/bcpred/2_training/gridsearch/scatter.lin.pdf
+/home/adonis/bcpred/2_training/gridsearch/scatter.pdf
+/home/adonis/bcpred/2_training/gridsearch/third.pdf

@@ -11,6 +11,7 @@ import IPython
 import sklearn
 import mglearn
 import joblib
+import itertools
 
 # Data loading
 bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
@@ -27,11 +28,10 @@ X, Xt, y, yt = tts(bc_input,bc_output,random_state=74)
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
-svmlin = joblib.load("./models/bc_svmlin.pkl")
 svmrbf = joblib.load("./models/bc_svmrbf.pkl")
 lr = joblib.load("./models/bc_lr.pkl")
 mlp = joblib.load("./models/bc_mlp.pkl")
-models = [svmlin, svmrbf, lr, mlp]
+models = [svmrbf, lr, mlp]
 
 # Mixing training data
 
