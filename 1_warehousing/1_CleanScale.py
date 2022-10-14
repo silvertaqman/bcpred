@@ -58,4 +58,6 @@ cancer_sr.to_csv("./Mix_BC_sr.csv", index=False)
 ## Principal Component Analysis (from 8708 to 332 to explain 0.97 of variance)
 from sklearn.decomposition import PCA
 pcaModel = PCA(0.97)
+## Export IDs and Class
+bc[["ProtID", "Class"]].to_csv("./ProtIDs.csv")
 '''
