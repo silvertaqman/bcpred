@@ -85,8 +85,6 @@ metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, s
 metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
 metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
 
-
-
 ###################################################################
 # Mixing combinations
 # Boosting: training over weak classifiers
@@ -94,112 +92,29 @@ metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
 
 # Adaboost
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.model_selection import cross_validate as cv
+from sklearn.metrics import make_scorer, accuracy_score, recall_score, roc_auc_score, confusion_matrix, precision_score
+adarbf = AdaBoostClassifier(base_estimator=SVC(kernel='rbf',probability=True, random_state=74))
+params = {
+	'n_estimators': (1,3,5,10,20,25,40,50,75,90,100),                  
+	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0,1.5),
+	'algorithm': ('SAMME', 'SAMME.R'),
+	'base_estimator__C': (0.1,0.5,1.0,5.0,10.0),
+	'base_estimator__gamma': (1.0,0.75,0.5,0.25,0.1,0.01)}
+gs = GridSearchCV(adarbf, param_grid, cv=5).fit(X,y) # lot of time
 
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import KFold
+svmrbf = SVC().fit(X,y)
+adarbf = AdaBoostClassifier(**gs.best_params_).fit(X,y)
 
-import warnings 
-warnings.filterwarnings(action='ignore', message='foo bar')
-
-def print_params(clf):
-    # MSE boost_DTR =  0.8991042042301597
-    # Best params boost_DTR =  {'base_estimator__criterion': 'friedman_mse', 
-    # 'base_estimator__max_depth': 20, 'learning_rate': 1.5, 'loss': 'exponential', 'n_estimators': 50}
-    
-    print("MSE boost_DTR = ",clf.best_score_)
-    print("Best params boost_DTR = ", clf.best_params_)
-    
-
-    
-    means = clf.cv_results_['mean_test_score']
-    stds  = clf.cv_results_['std_test_score']
-    params = clf.cv_results_['params']
-    print("MSE boost_DTR = %0.3f (+/- %0.3f)" % (means.mean(),stds.mean()))
-    #print(means, '+/-', stds)
-    plt.plot(means,label='means')
-    plt.plot(means+2*stds,label='means + std')
-    plt.plot(means-2*stds,label='means - std')
-    plt.legend()
-    plt.grid()
-    plt.show()
-    
-    for mean, std, param in zip(means, stds, params):
-            print("%0.3f (+/- %0.3f) for %r" % (mean, std*2,param))
-    
-def train_gridsearch_regression(boston,cv):    
-    
-    # AdaBoost regression
-    boost_DTR = AdaBoostRegressor(base_estimator=DecisionTreeRegressor(), random_state=0)
-    '''
-    parameters = {'n_estimators': (1, 2,3,4,5,6,7,8,9,10,11,12,13,15,20,30,40,50), 
-                  'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0,1.5,2.0),
-                  'loss': ('linear', 'square', 'exponential'), 
-                  'base_estimator__max_depth': (1, 2, 4 ,6 ,8 ,10,15,20,25,30,40),
-                  'base_estimator__criterion':('squared_error', 'friedman_mse', 'absolute_error', 'poisson')}
-    '''
-    parameters = { 'n_estimators': (1, 2,3,4,5,6,),
-                  'learning_rate': (0.0001, 0.001,),
-                  'loss': ('linear', 'square', 'exponential'), 
-                  'base_estimator__max_depth': (1, 2, 4 ,),
-                  'base_estimator__criterion':('friedman_mse','poisson')}
-    
-    clf = GridSearchCV(boost_DTR, parameters,cv=cv,scoring = 'r2', n_jobs=-1)
-    clf.fit(boston.data, boston.target) 
-    
-    print_params(clf)
-    
-    
-    dtr = DecisionTreeRegressor(max_depth=20, criterion='friedman_mse')
-    boost = AdaBoostRegressor(dtr, n_estimators=50, learning_rate=1.5,loss='exponential')
-    boost.fit(boston.data, boston.target)     
-    print("MSE boost = ",boost.score(boston.data, boston.target))
-    
-# KFold for Adaboost
-
-boston_dt = load_boston()
-cvKF = KFold(n_splits=5,shuffle=True,random_state=2)
-train_gridsearch_regression(boston_dt,cvKF)
+scoring = ['accuracy','recall','precision','roc_auc']
+kfv = cv(adarbf, bc_input,bc_output,cv=5,scoring= scoring, n_jobs=-1)
 
 
-# Classification
-
-def train_gridsearch_classification_DTC(iris,cv_kf):
-        
-    # Check that base trees can be grid-searched.
-    # AdaBoost classification
-    boost_DTC = AdaBoostClassifier(base_estimator=DecisionTreeClassifier())
-    parameters = {'n_estimators': (1,2,3,4,5,6,7,8,9,10,15,20,25),                  
-                  'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
-                  'algorithm': ('SAMME', 'SAMME.R'),
-                  'base_estimator__max_depth': (1, 2,3,4,5,6,8,10,12,15,20)}
-    
-    clf = GridSearchCV(boost_DTC, parameters,cv=cv_kf)
-    clf.fit(iris.data, iris.target)
-    
-    print("Accuracy boost_DTC = ", clf.best_score_)
-    print("Best params boost_DTC = ", clf.best_params_)
-    # Best params boost_DTC =  {'algorithm': 'SAMME', 
-    #'base_estimator__max_depth': 1, 'learning_rate': 1.0, 'n_estimators': 6}
-    
-    boost_DTC.fit(iris.data, iris.target)
-    print("Accuracy DTC= " ,boost_DTC.score(iris.data, iris.target))
-    
-def train_gridsearch_classification_SVC(iris,cv_kf):
-    
-    boost_SVC = AdaBoostClassifier(base_estimator=SVC(kernel='rbf',probability=True))    
-    
-    parameters = {'n_estimators': (1,2,3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50),                  
-                  'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
-                  'algorithm': ('SAMME', 'SAMME.R'),
-                  'base_estimator__C': (0.1,0.5,1.0,5.0, 10.0), 'base_estimator__gamma': (1.0,0.75,0.5,0.25,0.1,0.01) }
-    
-    clf = GridSearchCV(boost_SVC,parameters, cv=cv_kf, scoring='accuracy', n_jobs=-1)
+clf = GridSearchCV(adarbf,params, cv=5, scoring='accuracy', n_jobs=-1)
     clf.fit(iris.data, iris.target)
     print("Accuracy boost_SVM = ",clf.best_score_)
     print("Best params boost_SVC = ", clf.best_params_)
-    # Best params boost_SVC =  {'algorithm': 'SAMME.R', 'base_estimator__C': 0.5, 
+    # Best params boost_SVC =  {'algorithm': 'SAMME.R', 'base_estimator__C': 0.5,
     # 'base_estimator__gamma': 0.75, 'learning_rate': 0.1, 'n_estimators': 20}
 
     
