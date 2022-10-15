@@ -5,7 +5,7 @@ import numpy as np
 import sklearn
 import joblib
 import itertools
-# Gridsearch runned on HPC-Cedia cluster. Hyperparameters setted to maximize accuracy and recall response. 
+# Gridsearch runned on HPC-Cedia cluster. Hyperparameters setted to maximize accuracy and recall responses. 
 
 # Load data
 bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
@@ -131,7 +131,7 @@ pd.DataFrame(confusion_matrix(yt, mlp.predict(Xt), labels=[0,1])).to_csv('./mlp_
 from sklearn.model_selection import learning_curve
 size_svm, score_svm, tscore_svm, ft_svm,_ = learning_curve(svmrbf, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_lr, score_lr, tscore_lr, ft_lr,_ = learning_curve(lr, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_mlp, score_mlp, tscore_mlp, ft_mlp,_ = learning_curve(svmrbf, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_mlp, score_mlp, tscore_mlp, ft_mlp,_ = learning_curve(mlp, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_svm, size_lr, size_mlp))
