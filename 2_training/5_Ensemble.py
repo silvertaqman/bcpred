@@ -39,6 +39,7 @@ models = [svmrbf, lr, mlp]
 
 # Training and Tuning ensembles for final selection
 ###################################################################
+# Mixing Training Data
 # Bagging
 ###################################################################
 # evaluate bagging ensemble for classification
@@ -84,92 +85,44 @@ metrics['models'] = 10*["svm"]+10*['lr']+10*['mlp']
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_mlp])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_mlp])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_mlp]))],axis=1)
 metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
 metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
-
 ###################################################################
 # Mixing combinations
 # Boosting: training over weak classifiers
 ###################################################################
-
 # Adaboost
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import cross_validate as cv
 from sklearn.metrics import make_scorer, accuracy_score, recall_score, roc_auc_score, confusion_matrix, precision_score
 adarbf = AdaBoostClassifier(base_estimator=SVC(kernel='rbf',probability=True, random_state=74))
-params = {
-	'n_estimators': (1,3,5,10,20,25,40,50,75,90,100),                  
-	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0,1.5),
-	'algorithm': ('SAMME', 'SAMME.R'),
-	'base_estimator__C': (0.1,0.5,1.0,5.0,10.0),
-	'base_estimator__gamma': (1.0,0.75,0.5,0.25,0.1,0.01)}
+param_grid = {
+	'n_estimators': (1,50,100),                  
+	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
+	'base_estimator__C': (0.1,1.0,10.0),
+	'base_estimator__gamma': (1.0,0.1,0.01)}
 gs = GridSearchCV(adarbf, param_grid, cv=5).fit(X,y) # lot of time
+adarbf = AdaBoostClassifier(base_estimator=SVC(kernel="rbf",probability=True, random_state=74, C=1, gamma=0.1), learning_rate=0.1, n_estimators=100).fit(X,y)
+joblib.dump(adarbf, "./ensemble_metrics/adarbf.pkl")
+adalr = AdaBoostClassifier(base_estimator=LogisticRegression())
+param_grid = {
+	'n_estimators': (1,50,100),                  
+	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
+	'base_estimator__C': np.logspace(-3,4,5),
+	'base_estimator__penalty': ['l2', 'none'],
+	'base_estimator__solver': ['newton-cg', 'lbfgs', 'sag'],
+	'base_estimator__random_state': [74],
+	'base_estimator__max_iter': [5000]
+}
 
-svmrbf = SVC().fit(X,y)
-adarbf = AdaBoostClassifier(**gs.best_params_).fit(X,y)
+gs = GridSearchCV(adalr, param_grid, cv=5).fit(X,y) # lot of time
+joblib.dump(gs, ".gs.pkl")
 
-scoring = ['accuracy','recall','precision','roc_auc']
-kfv = cv(adarbf, bc_input,bc_output,cv=5,scoring= scoring, n_jobs=-1)
+AdaBoostClassifier(base_estimator=LogisticRegression(penalty = "none", solver = "sag", max_iter=5000), learning_rate=0.1, n_estimators=100).fit(X,y)
 
-
-clf = GridSearchCV(adarbf,params, cv=5, scoring='accuracy', n_jobs=-1)
-    clf.fit(iris.data, iris.target)
-    print("Accuracy boost_SVM = ",clf.best_score_)
-    print("Best params boost_SVC = ", clf.best_params_)
-    # Best params boost_SVC =  {'algorithm': 'SAMME.R', 'base_estimator__C': 0.5,
-    # 'base_estimator__gamma': 0.75, 'learning_rate': 0.1, 'n_estimators': 20}
-
-    
-    boost_SVC.fit(iris.data, iris.target)
-    print("Accuracy SVC= " ,boost_SVC.score(iris.data, iris.target))
-    
-    
-def train_gridsearch_classification_LogReg(iris,cv_kf):
-    
-    boost_LogReg = AdaBoostClassifier(base_estimator=LogisticRegression(max_iter = 1000))
-    
-    parameters = {'n_estimators': (1,2,3,4,5,6,7,8,9,10,15,20,25),                  
-                  'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
-                  'algorithm': ('SAMME', 'SAMME.R'),
-                  'base_estimator__C':(0.1,0.5,1.0,5.0, 10.0),
-                  'base_estimator__solver': ('newton-cg','lbfgs')}
-    
-    
-    clf = GridSearchCV(boost_LogReg,parameters, cv=cv_kf ,scoring='accuracy', n_jobs=-1)    
-    clf.fit(iris.data, iris.target)
-    print("Accuracy boost_SVM = ",clf.best_score_)
-    print("Best params boost_LogReg = ", clf.best_params_)
-    # Best params boost_LogReg =  {'algorithm': 'SAMME', 'base_estimator__C': 1.0, 
-    # 'base_estimator__solver': 'newton-cg', 'learning_rate': 0.1, 'n_estimators': 25}
-    
-    boost_LogReg.fit(iris.data, iris.target)
-    print("Accuracy Log_Reg= " ,boost_LogReg.score(iris.data, iris.target))
-    
-#==============================================================================
-
-cv_kf = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-iris_dt   = load_iris()
-
-#train_gridsearch_classification_DTC(iris_dt,cv_kf)
-#train_gridsearch_classification_SVC(iris_dt,cv_kf)
-train_gridsearch_classification_LogReg(iris_dt,cv_kf)
-
-# Ada + DTC = 0.964
-# Ada + SVC = 0.9733
-# Ada + LR  = 0.964
-
-
+# Compare LR and SVC clasiffiers with ADA plus boosting
 ###################################################################
-# Stacking: train multiple models together
+# Mixing models
+# Voting Ensembles:
 ###################################################################
-from vecstack import stacking
-# computing the stack features
-s, st = stacking(models, X, y, Xt, regression = True, n_folds = 4, shuffle = True, random_state = 74)
-# fitting the second level model with stack features
-allplus = svmrbf.fit(s, y)
-# predicting the final output using stacking
-yp = allplus.predict(st)
-# printing the root mean squared error between real value and predicted value
-print("MSE: ", mean_squared_error(yt, yp))
-
 # Max/Hard Voting
 from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
@@ -177,16 +130,21 @@ estimators = [('radial',CalibratedClassifierCV(svmrbf)),('logistic',lr),('multi'
 hard_ensemble = VotingClassifier(estimators, voting='hard').fit(X,y)
 hard_ensemble.score(Xt,yt)
 
-# printing log loss between actual and predicted value
-
-print("log_loss: ", log_loss(yt, yp))
-
 # Average/Soft Voting
-
-yp = sum([p.predict(Xt) for p in models])/3.0
-
 soft_ensemble = VotingClassifier(estimators, voting='soft').fit(X,y)
-yp = soft_ensemble.predict(Xt)
+soft_ensemble.score(Xt, yt)
+
+# Hyperparameter Tuning Ensembles Over MLP
+from sklearn.neural_network import MLPClassifier
+mlp_1 = MLPClassifier(activation="relu", alpha=0.0001, hidden_layer=(80,20), learning_rate_init=0.001, max_iter=50000, random_state=74, shuffle=False, solver="adam")
+mlp_2 = MLPClassifier(activation="relu", alpha=0.0001, hidden_layer=(20,15), learning_rate_init=0.002, max_iter=50000, random_state=74, shuffle=False, solver="adam")
+mlp_3 = MLPClassifier(activation="relu", alpha=0.0001, hidden_layer=(20, 15), learning_rate_init=0.01, max_iter=50000, random_state=74, shuffle=False, solver="adam")
+estimators = [('mlp_1', mlp_1), ('mlp_2', mlp_2), ('mlp_3', mlp_3)]
+hte = VotingClassifier(estimators, voting='hard').fit(X,y)
+hte.score(Xt,yt)
+
+# Horizontal Voting Ensembles & Snapshot emsembles are an option
+
 
 # printing the root mean squared error between real value and predicted value
 print("MSE of model 1: ", mean_squared_error(yt, svmrbf))
@@ -205,3 +163,43 @@ plt.plot(t, yp, c='yellow')
 plt.legend(["Test", "Prediction"], loc ="lower right")
 plt.grid()
 plt.show()
+
+# printing log loss between actual and predicted value
+
+print("log_loss: ", log_loss(yt, yp))
+
+###################################################################
+# Stacking: train multiple models together
+###################################################################
+# With sklearn 
+
+from sklearn.ensemble import StackingClassifier
+
+estimators = [("svm", svmrbf),("lr",lr)]
+
+stack = StackingClassifier(estimators = estimators, final_estimator = mlp).fit(X, y)
+
+joblib.dump(stack, "./ensemble_metrics/stacking.pkl")
+
+# With mlens
+
+from mlens.ensemble import SuperLearner
+
+ensemble = SuperLearner(scorer = accuracy_score,random_state = 74)
+ensemble.add([svmrbf, mlp])
+ensemble.add_meta(lr)
+ensemble.fit(X,y)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
