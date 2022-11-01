@@ -46,7 +46,6 @@ F = FS
 from sklearn.linear_model import RidgeCV
 # Compare methods: kbest, percentile, False positive rate, false discovery rate, family wise, ridgeCV and Tree Model based
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.pipeline import Pipeline
 selector = {
 	'kbest_chi2': SelectKBest(chi2, k=300),
 	'kbest_f':SelectKBest(f_classif), 
@@ -64,34 +63,35 @@ selector = {
 	'fwe_f':SelectFwe(f_classif, alpha=1e-1)
 #	'fwe_mutual':SelectFwe(mutual_info_classif, alpha=1e-1)
 }
+
+# RidgeCV
+clf = RidgeCV(alphas=np.logspace(-5,5,10)).fit(X,y)
+importance = np.abs(clf.coef_)
+threshold = np.sort(importance)[-300] + 0.01
+ridge = SelectFromModel(clf, threshold=threshold).fit(X, y)
+
+# Final comparation
+
 sel=[p.fit_transform(X,y) for p in selector.values()]
+selector['ridgeCV']=[]
 features = [p.get_support(indices=True) for p in selector.values()]
-metrics = {k:f for k,f in zip(selector.keys(),features)}
+features.append(ridge.get_support(indices=True))
+total_feat=[]
+for i in features:
+	total_feat.append(np.array([F[k] for k in i]))
+
+
+metrics = {k:f for k,f in zip(selector.keys(),total_feat)}
 metrics = pd.DataFrame().from_dict(metrics, orient="index").T
 metrics.to_csv("selection.csv")
 
-# Compare sel features trough 
-
-# Escoger 300 con RidgeCV
-importance = np.abs(ridge.coef_)
-feature_names = np.array(diabetes.feature_names)
-threshold = np.sort(importance)[-300] + 0.01
-sfm = SelectFromModel(ridge, threshold=threshold).fit(X, y)
-print(f"Features selected by SelectFromModel: {feature_names[sfm.get_support()]}")
-# tree
-('tree_model',ExtraTreesClassifier(n_estimators=300))
-clf = ExtraTreesClassifier(n_estimators=50)
-X_tree = SelectFromModel(clf, prefit=True).transform(X)
+# Compare sel features trough euler diagrams
 
 # Using kbest (as authors)
 selector = SelectKBest(chi2, k=300)
 X = selector.fit_transform(X, y)
-### export unselected features
-FS = []
-[FS.append(F[i]) for i in selector.get_support(indices=True)]
-with open("univariant_feature_selection.txt","w") as f:
-	[f.write("%s\n" % i) for i in list(set(F) - set(FS))]
 
+### export unselected features
 ## Create and export the working dataframe: scaled and reduced
 cancer_sr = pd.DataFrame(X, columns=FS)
 cancer_sr['Class'] = y
