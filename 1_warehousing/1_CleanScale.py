@@ -85,7 +85,7 @@ metrics = {k:f for k,f in zip(selector.keys(),total_feat)}
 metrics = pd.DataFrame().from_dict(metrics, orient="index").T
 metrics.to_csv("selection.csv")
 
-# Compare sel features trough euler diagrams
+# Compare sel features trough euler diagrams (graphic)
 
 # Using kbest (as authors)
 selector = SelectKBest(chi2, k=300)

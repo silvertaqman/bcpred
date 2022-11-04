@@ -5,6 +5,7 @@ library(tidyr)
 library(ggplot2)
 library(ggpubr)
 library(purrr)
+library(pilot)
 # Descriptive analysis
 ## Load data
 mix <- read_csv("./Mix_BC.csv.gz")[,-c(1,2,8743)] %>%
@@ -88,7 +89,8 @@ a <- mix %>%
   	aes(label = n),
   	position = position_stack(vjust = 0.5),
   	colour = "white",
-  	fontface = "bold")
+  	fontface = "bold")+
+  	theme_pilot()
 
 # Merge two plots
 ggsave("aabarplot.pdf", 

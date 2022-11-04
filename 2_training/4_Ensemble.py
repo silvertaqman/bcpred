@@ -58,38 +58,6 @@ joblib.dump(bagrbf, "./ensemble_models/bagrbf.pkl")
 joblib.dump(baglr, "./ensemble_models/baglr.pkl")
 joblib.dump(bagmlp, "./ensemble_models/bagmlp.pkl")
 
-# K-fold Validation
-kfcv = RepeatedKFold(n_splits=5, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
-kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bagmodels]
-
-# K-stratified Validation
-ksfcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=74)
-ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in bagmodels]
-metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
-
-# Exporting metrics to csv (90x10)
-metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
-metrics['repeat'] = 30*['fold'+str(i+1) for i in range(3)]
-metrics['folds'] = 18*['fold'+str(i+1) for i in range(5)]
-model = np.repeat(['svmrbf', 'lr', 'mlp'], 5)
-metrics['model'] = np.tile(model, 6)
-metrics['method'] = np.repeat(['kfold','stratified'],45)
-metrics.to_csv('./ensemble_metrics/bagging_validation_metrics.csv')
-
-# Export data for overfit learning curve (30x17)
-from sklearn.model_selection import learning_curve
-size_svm, score_svm, tscore_svm, ft_svm,_ = learning_curve(bagrbf, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_lr, score_lr, tscore_lr, ft_lr,_ = learning_curve(baglr, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_mlp, score_mlp, tscore_mlp, ft_mlp,_ = learning_curve(bagmlp, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-
-metrics = pd.DataFrame()
-metrics['train_size'] = np.concatenate((size_svm, size_lr, size_mlp))
-metrics['models'] = 10*["svm"]+10*['lr']+10*['mlp']
-metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_mlp])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_mlp])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_mlp]))],axis=1)
-metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
-metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
-
 ###################################################################
 # Mixing combinations of predictions
 # Boosting: training over weak classifiers 
@@ -139,18 +107,17 @@ param_grid_dtc = {
 }
 
 # Tuning hyperparameters
-gs_rbf=GridSearchCV(adarbf,param_grid_rbf,n_jobs=-1,cv=5).fit(X,y) # lot of time
+gs_rbf=GridSearchCV(adarbf,param_grid_rbf,n_jobs=-1,cv=10).fit(X,y) # lot of time
 gs_rbf.best_params_
 joblib.dump(gs_rbf, "./gsrbf.pkl")
-gs_lr=GridSearchCV(adalr,param_grid_lr,n_jobs=-1, cv=5).fit(X,y)
+gs_lr=GridSearchCV(adalr,param_grid_lr,n_jobs=-1, cv=10).fit(X,y)
 gs_lr.best_params_
 joblib.dump(gs_lr, "./gslr.pkl")
-gs_dtc = GridSearchCV(adadtc,param_grid_dtc,n_jobs=-1, cv=5).fit(X,y)
+gs_dtc = GridSearchCV(adadtc,param_grid_dtc,n_jobs=-1, cv=10).fit(X,y)
 gs_dtc.best_params_
 joblib.dump(gs_dtc, "./gss/gsdtc.pkl")
 
 # Export best metrics for gridsearch (dtc:36000x22 + lr:1200x19 + rbf:2500x17)
-
 
 gs = [gs_dtc, gs_rbf, gs_lr]
 
@@ -169,40 +136,6 @@ joblib.dump(adalr, "./ensemble_metrics/adalr.pkl")
 joblib.dump(adarbf, "./ensemble_metrics/adarbf.pkl")
 
 bosmodels = [adarbf, adalr, adadtc]
-
-# Metrics for validation
-
-# K-fold Validation
-kfcv = RepeatedKFold(n_splits=5, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
-kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bosmodels]
-
-# K-stratified Validation
-ksfcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=74)
-ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in bosmodels]
-metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
-
-# Exporting metrics to csv (90x10)
-metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
-metrics['repeat'] = 30*['fold'+str(i+1) for i in range(3)]
-metrics['folds'] = 18*['fold'+str(i+1) for i in range(5)]
-model = np.repeat(['rbf', 'lr', 'mlp'], 5)
-metrics['model'] = np.tile(model, 6)
-metrics['method'] = np.repeat(['kfold','stratified'],45)
-metrics.to_csv('./ensemble_metrics/boosting_validation_metrics.csv')
-
-# Export data for overfit learning curve (30x17)
-from sklearn.model_selection import learning_curve
-size_svm, score_svm, tscore_svm, ft_svm,_ = learning_curve(adarbf, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_lr, score_lr, tscore_lr, ft_lr,_ = learning_curve(adalr, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_dtc, score_dtc, tscore_dtc, ft_dtc,_ = learning_curve(adadtc, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-
-metrics = pd.DataFrame()
-metrics['train_size'] = np.concatenate((size_svm, size_lr, size_dtc))
-metrics['models'] = 10*["svm"]+10*['lr']+10*['dtc']
-metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_dtc])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_dtc])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_dtc]))],axis=1)
-metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
-metrics.to_csv('./ensemble_metrics/boosting_learning_curve.csv')
 
 ###################################################################
 # Mixing models
@@ -233,41 +166,30 @@ mlp_3 = MLPClassifier(activation="relu", alpha=0.0001, hidden_layer_sizes=(20, 1
 estimators = [('mlp_1', mlp_1), ('mlp_2', mlp_2), ('mlp_3', mlp_3)]
 hte = VotingClassifier(estimators, voting='soft').fit(X,y)
 hte.score(Xt,yt)
-joblib.dump(hte,"./ensemble_models/hte.pkl")
+joblib.dump(hte,"./ensemble_models/hte.pkl")x = c("bagging_learning_curve.csv",
+"boosting_learning_curve.csv",
+"learning_curve.csv",
+"voting_learning_curve.csv",
+"stacking_learning_curve.csv")
+names = c("bagging_lc.pdf",
+"bagging_sc.pdf",
+"bagging_pr.pdf",
+"boosting_lc.pdf",
+"boosting_sc.pdf",
+"boosting_pr.pdf",
+"opt_lc.pdf",
+"opt_sc.pdf",
+"opt_pr.pdf",
+"voting_lc.pdf",
+"voting_sc.pdf",
+"voting_pr.pdf",
+"stacking_lc.pdf",
+"stacking_sc.pdf",
+"stacking_pr.pdf")
+# Generate images
+for(i in 1:5) lsp(x[i],names[(3*i-2):(3*i)])
 
 votmodels = [hard_ensemble, soft_ensemble, hte]
-
-# K-fold Validation
-kfcv = RepeatedKFold(n_splits=5, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
-kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in votmodels]
-
-# K-stratified Validation
-ksfcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=74)
-ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in votmodels]
-metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
-
-# Exporting metrics to csv (90x10)
-metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
-metrics['repeat'] = 30*['fold'+str(i+1) for i in range(3)]
-metrics['folds'] = 18*['fold'+str(i+1) for i in range(5)]
-model = np.repeat(['hard', 'soft', 'hte'], 5)
-metrics['model'] = np.tile(model, 6)
-metrics['method'] = np.repeat(['kfold','stratified'],45)
-metrics.to_csv('./ensemble_metrics/voting_validation_metrics.csv')
-
-# Export data for overfit learning curve
-from sklearn.model_selection import learning_curve
-size_hard, score_hard, tscore_hard, ft_hard,_ = learning_curve(hard_ensemble, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_soft, score_soft, tscore_soft, ft_soft,_ = learning_curve(soft_ensemble, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_hte, score_hte, tscore_hte, ft_hte,_ = learning_curve(hte, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-
-metrics = pd.DataFrame()
-metrics['train_size'] = np.concatenate((size_hard, size_soft, size_hte))
-metrics['models'] = 10*["hard"]+10*['soft']+10*['hte']
-metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_hard, score_soft, score_hte])), pd.DataFrame(np.concatenate([tscore_hard, tscore_soft, tscore_hte])),pd.DataFrame(np.concatenate([ft_hard, ft_soft, ft_hte]))],axis=1)
-metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
-metrics.to_csv('./ensemble_metrics/voting_learning_curve.csv')
 
 # printing log loss between actual and predicted value
 #print("log_loss: ", log_loss(yt, yp))
@@ -297,37 +219,261 @@ stacks = [stack_1, stack_2, stack_3]
 #adarbf = joblib.load("./ensemble_models/adarbf.pkl.gz")
 #adalr = joblib.load("./ensemble_models/adalr.pkl.gz")
 #adadtc = joblib.load("./ensemble_models/adadtc.pkl.gz")
+#
+
+# Metrics for validation (Bagging)
+# K-fold Validation
+kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
+scoring = ['accuracy','recall','precision','roc_auc']
+kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bagmodels]
+
+# K-stratified Validation
+ksfcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=74)
+ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in bagmodels]
+metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
+
+# Exporting metrics to csv (90x10)
+metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
+metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
+metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
+model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+metrics['model'] = np.tile(model, 6)
+metrics['method'] = np.repeat(['kfold','stratified'],90)
+metrics.to_csv('./ensemble_metrics/bagging_validation_metrics.csv')
+
+# Export data for overfit learning curve (30x17)
+from sklearn.model_selection import learning_curve
+size_svm, score_svm, tscore_svm, ft_svm,_ = learning_curve(bagrbf, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_lr, score_lr, tscore_lr, ft_lr,_ = learning_curve(baglr, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_mlp, score_mlp, tscore_mlp, ft_mlp,_ = learning_curve(bagmlp, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+
+metrics = pd.DataFrame()
+metrics['train_size'] = np.concatenate((size_svm, size_lr, size_mlp))
+metrics['models'] = 10*["svm"]+10*['lr']+10*['mlp']
+metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_mlp])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_mlp])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_mlp]))],axis=1)
+metrics.columns = ['train_size',
+	'models',
+	'train_scores_fold1',
+	'train_scores_fold2',
+	'train_scores_fold3',
+	'train_scores_fold4',
+	'train_scores_fold5',
+	'train_scores_fold6',
+	'train_scores_fold7',
+	'train_scores_fold8',
+	'train_scores_fold9',
+	'train_scores_fold10',
+	'test_scores_fold1',
+	'test_scores_fold2',
+	'test_scores_fold3',
+	'test_scores_fold4',
+	'test_scores_fold5',
+	'test_scores_fold6',
+	'test_scores_fold7',
+	'test_scores_fold8',
+	'test_scores_fold9',
+	'test_scores_fold10',
+	'fit_times_fold1',
+	'fit_times_fold2',
+	'fit_times_fold3',
+	'fit_times_fold4',
+	'fit_times_fold5',
+	'fit_times_fold6',
+	'fit_times_fold7',
+	'fit_times_fold8',
+	'fit_times_fold9',
+	'fit_times_fold10']
+metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
+
+# Metrics for validation (Adaboost)
 
 # K-fold Validation
-kfcv = RepeatedKFold(n_splits=5, n_repeats=3, random_state=74)
+kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
+scoring = ['accuracy','recall','precision','roc_auc']
+kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bosmodels]
+
+# K-stratified Validation
+ksfcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=74)
+ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in bosmodels]
+metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
+
+# Exporting metrics to csv (90x10)
+metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
+metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
+metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
+model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+metrics['model'] = np.tile(model, 6)
+metrics['method'] = np.repeat(['kfold','stratified'],90)
+metrics.to_csv('./ensemble_metrics/boosting_validation_metrics.csv')
+
+# Export data for overfit learning curve (30x17)
+from sklearn.model_selection import learning_curve
+size_svm, score_svm, tscore_svm, ft_svm,_ = learning_curve(adarbf, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_lr, score_lr, tscore_lr, ft_lr,_ = learning_curve(adalr, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_dtc, score_dtc, tscore_dtc, ft_dtc,_ = learning_curve(adadtc, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+
+metrics = pd.DataFrame()
+metrics['train_size'] = np.concatenate((size_svm, size_lr, size_dtc))
+metrics['models'] = 10*["svm"]+10*['lr']+10*['dtc']
+metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_dtc])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_dtc])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_dtc]))],axis=1)
+metrics.columns = metrics.columns = ['train_size',
+	'models',
+	'train_scores_fold1',
+	'train_scores_fold2',
+	'train_scores_fold3',
+	'train_scores_fold4',
+	'train_scores_fold5',
+	'train_scores_fold6',
+	'train_scores_fold7',
+	'train_scores_fold8',
+	'train_scores_fold9',
+	'train_scores_fold10',
+	'test_scores_fold1',
+	'test_scores_fold2',
+	'test_scores_fold3',
+	'test_scores_fold4',
+	'test_scores_fold5',
+	'test_scores_fold6',
+	'test_scores_fold7',
+	'test_scores_fold8',
+	'test_scores_fold9',
+	'test_scores_fold10',
+	'fit_times_fold1',
+	'fit_times_fold2',
+	'fit_times_fold3',
+	'fit_times_fold4',
+	'fit_times_fold5',
+	'fit_times_fold6',
+	'fit_times_fold7',
+	'fit_times_fold8',
+	'fit_times_fold9',
+	'fit_times_fold10']
+metrics.to_csv('./ensemble_metrics/boosting_learning_curve.csv')
+# Metrics for validation (Voting)
+# K-fold Validation
+kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
+scoring = ['accuracy','recall','precision','roc_auc']
+kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in votmodels]
+
+# K-stratified Validation
+ksfcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=74)
+ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in votmodels]
+metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
+
+# Exporting metrics to csv (90x10)
+metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
+metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
+metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
+model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+metrics['model'] = np.tile(model, 6)
+metrics['method'] = np.repeat(['kfold','stratified'],90)
+metrics.to_csv('./ensemble_metrics/voting_validation_metrics.csv')
+
+# Export data for overfit learning curve
+from sklearn.model_selection import learning_curve
+size_hard, score_hard, tscore_hard, ft_hard,_ = learning_curve(hard_ensemble, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_soft, score_soft, tscore_soft, ft_soft,_ = learning_curve(soft_ensemble, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_hte, score_hte, tscore_hte, ft_hte,_ = learning_curve(hte, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+
+metrics = pd.DataFrame()
+metrics['train_size'] = np.concatenate((size_hard, size_soft, size_hte))
+metrics['models'] = 10*["hard"]+10*['soft']+10*['hte']
+metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_hard, score_soft, score_hte])), pd.DataFrame(np.concatenate([tscore_hard, tscore_soft, tscore_hte])),pd.DataFrame(np.concatenate([ft_hard, ft_soft, ft_hte]))],axis=1)
+metrics.columns = metrics.columns = ['train_size',
+	'models',
+	'train_scores_fold1',
+	'train_scores_fold2',
+	'train_scores_fold3',
+	'train_scores_fold4',
+	'train_scores_fold5',
+	'train_scores_fold6',
+	'train_scores_fold7',
+	'train_scores_fold8',
+	'train_scores_fold9',
+	'train_scores_fold10',
+	'test_scores_fold1',
+	'test_scores_fold2',
+	'test_scores_fold3',
+	'test_scores_fold4',
+	'test_scores_fold5',
+	'test_scores_fold6',
+	'test_scores_fold7',
+	'test_scores_fold8',
+	'test_scores_fold9',
+	'test_scores_fold10',
+	'fit_times_fold1',
+	'fit_times_fold2',
+	'fit_times_fold3',
+	'fit_times_fold4',
+	'fit_times_fold5',
+	'fit_times_fold6',
+	'fit_times_fold7',
+	'fit_times_fold8',
+	'fit_times_fold9',
+	'fit_times_fold10']
+metrics.to_csv('./ensemble_metrics/voting_learning_curve.csv')
+# Metrics for validation (Stacking)
+# K-fold Validation
+kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
 scoring = ['accuracy','recall','precision','roc_auc']
 kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in stacks]
 
 # K-stratified Validation
-ksfcv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=74)
+ksfcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=74)
 ksfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=ksfcv, n_jobs=-1, error_score='raise') for p in stacks]
 metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 
 # Exporting metrics to csv
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
-metrics['repeat'] = 30*['fold'+str(i+1) for i in range(3)]
-metrics['folds'] = 18*['fold'+str(i+1) for i in range(5)]
-model = np.repeat(['stack_1', 'stack_2', 'stack_3'], 5)
+metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
+metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
+model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
 metrics['model'] = np.tile(model, 6)
-metrics['method'] = np.repeat(['kfold','stratified'],45)
+metrics['method'] = np.repeat(['kfold','stratified'],90)
 metrics.to_csv('./ensemble_metrics/stacking_validation_metrics.csv')
 
 # Export data for overfit learning curve (30x17)
 from sklearn.model_selection import learning_curve
-size_1, score_1, tscore_1, ft_1,_ = learning_curve(stack_1, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_2, score_2, tscore_2, ft_2,_ = learning_curve(stack_2, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_3, score_3, tscore_3, ft_3,_ = learning_curve(stack_3, X, y, cv=5, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_stack1, score_stack1, tscore_stack1, ft_stack1,_ = learning_curve(stack_1, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_stack2, score_stack2, tscore_stack2, ft_stack2,_ = learning_curve(stack_2, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_stack3, score_stack3, tscore_stack3, ft_stack3,_ = learning_curve(stack_3, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 
 metrics = pd.DataFrame()
-metrics['train_size'] = np.concatenate((size_hard, size_soft, size_hte))
+metrics['train_size'] = np.concatenate((size_stack1, size_stack2, size_stack3))
 metrics['models'] = 10*["stack_1"]+10*['stack_2']+10*['stack_3']
-metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_1, score_2, score_3])), pd.DataFrame(np.concatenate([tscore_1, tscore_2, tscore_3])),pd.DataFrame(np.concatenate([ft_1, ft_2, ft_3]))],axis=1)
-metrics.columns = ['train_size','models','train_scores_fold1','train_scores_fold2','train_scores_fold3','train_scores_fold4','train_scores_fold5','test_scores_fold1','test_scores_fold2','test_scores_fold3','test_scores_fold4','test_scores_fold5','fit_times_fold1','fit_times_fold2','fit_times_fold3','fit_times_fold4','fit_times_fold5']
+metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_stack1, ft_stack2, ft_stack3]))],axis=1)
+metrics.columns = metrics.columns = ['train_size',
+	'models',
+	'train_scores_fold1',
+	'train_scores_fold2',
+	'train_scores_fold3',
+	'train_scores_fold4',
+	'train_scores_fold5',
+	'train_scores_fold6',
+	'train_scores_fold7',
+	'train_scores_fold8',
+	'train_scores_fold9',
+	'train_scores_fold10',
+	'test_scores_fold1',
+	'test_scores_fold2',
+	'test_scores_fold3',
+	'test_scores_fold4',
+	'test_scores_fold5',
+	'test_scores_fold6',
+	'test_scores_fold7',
+	'test_scores_fold8',
+	'test_scores_fold9',
+	'test_scores_fold10',
+	'fit_times_fold1',
+	'fit_times_fold2',
+	'fit_times_fold3',
+	'fit_times_fold4',
+	'fit_times_fold5',
+	'fit_times_fold6',
+	'fit_times_fold7',
+	'fit_times_fold8',
+	'fit_times_fold9',
+	'fit_times_fold10']
 metrics.to_csv('./ensemble_metrics/stacking_learning_curve.csv')
 
 # Buscar un nuevo discriminador de caracteristicas, diferente de SelectKBest(Chi2)

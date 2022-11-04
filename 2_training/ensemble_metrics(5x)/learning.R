@@ -7,7 +7,6 @@ library(pilot)
 ##################################################################################
 # Learning curve
 ##################################################################################
-#
 learningcurve <- function(x){
 	ler <- read_csv(x) %>%
 		select(train_size, models, starts_with("train_scores"), starts_with("test_scores")) %>%
@@ -99,21 +98,21 @@ scalability <- function(x){
 performance <- function(x){
 	perf <- read_csv(x) %>%
 		select(models, starts_with("fit_times_fold") , starts_with("test_score")) %>%
-			pivot_longer(cols=starts_with("fit_times_fold"), names_to="fit_times_fold", values_to="fit_times") %>%
+			pivot_longer(cols=starts_with("fit_times_fold"), names_to="fold", values_to="fit_times") %>%
 			rowwise() %>%
 			transmute(
 				models = models,
 				fit_times = fit_times,
 				test_score = mean(c_across(starts_with("test_score"))),
 				deviation = sd(c_across(starts_with("test_score")))) %>%
-			ggplot(aes(x=fit_times, y=test_score, colour=models))+
+			ggplot(aes(x=fit_times, group=models))+
 				geom_ribbon(
 					aes(
 						ymin = test_score-deviation,
 						ymax = test_score+deviation),
 					fill = "grey90")+
 #				geom_point()+
-				geom_line()+
+				geom_line(aes(y = test_score, colour=models))+
 			facet_wrap(~models, scales="free_x")+
 		scale_colour_manual(
 		  "Modelo",
