@@ -4,11 +4,13 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(grid)
+library(cowplot)
 library(ggpubr)
 library(pilot)
 library(igraph)
 library(ggraph)
 library(ggdendro)
+library(dendextend)
 
 # TilePlot
 df <- read_csv("./selection.csv.gz") %>%
@@ -29,11 +31,11 @@ b <- df %>%
         count(Coincidence) %>% 
         arrange(desc(n))
 
-tile <- df %>%
+tileplot <- df %>%
 	count(Method, Coincidence) %>%
 	mutate(
-		Method = factor(Method, levels=a$Method),
-		Coincidence = factor(Coincidence, levels=b$Coincidence)) %>%
+#		Method = factor(Method, levels=a$Method),
+		Coincidence = factor(Coincidence, levels=partition_leaves(dendro)[[1]])) %>%
 	ggplot(aes(Method, Coincidence, fill= n)) + 
   geom_tile()+
   theme(
@@ -41,75 +43,43 @@ tile <- df %>%
   	axis.text.y=element_text(size=5),
   	legend.position="none")
 
-ggsave("tile.pdf", 
-	tile,
-	width=1500,
-	height= 12000, 
-	units="px", 
-	useDingbats=FALSE)
-
 # Plot a dendrogram
-
 scores <- df %>%
 	count(Method, Coincidence) %>%
 	mutate(
-		Method = factor(Method, levels=a$Method),
+#		Method = factor(Method, levels=a$Method),
 		Coincidence = factor(Coincidence, levels=b$Coincidence)) %>%
 		with(table(Coincidence, Method))
 
 d = dist(scores, method = "binary")
 hc = hclust(d, method="ward.D")
-pdf("dendrogram.pdf", width=45, height=10)
-plot(hc, cex=0.5)
-dev.off()
-
-# Merge them requires to change order
-long <- df %>% 
-	count(Method, Coincidence) %>%
-	mutate(
-		Coincidence = factor(
-			Coincidence,
-			levels=partition_leaves(dendro)[[1]]))
 dendro <- as.dendrogram(hc)
 
-longtile <- long %>%
-	ggplot(aes(Method, Coincidence, fill= n)) + 
-  geom_tile()+
-  theme(
-  	axis.text.x = element_text(
-  		angle = 90,
-  		vjust = 0.5,
-  		hjust=1),
-  	axis.text.y = element_blank(),
-  	axis.title.y = element_blank(),
-  	axis.ticks.y = element_blank(),
-  	legend.position="none")
-
 dendroplot <- 
-	ggdendrogram(
-		dendro,
-		rotate=TRUE)+
-	theme(
-		axis.text.y = element_text(
-			size = 5,
-			vjust = 0.5,
-			hjust = 1.0))
+    ggdendrogram(
+        dendro,
+        rotate=TRUE)+
+    theme(
+    	axis.text.x = element_blank(),
+    	axis.text.y = element_blank())
 
-dendrotile <- ggarrange(
-	longtile,
-	dendroplot,
-	labels=c("A","B"),
-	ncol=2,
-	nrow=1)
-#	align="hv")
+fss_comparison <- plot_grid(
+	tileplot, 
+	dendroplot, 
+	align = "h",
+	scale=c(1,1.096)
+)
+save_plot(
+	"fss_comparison.pdf",
+	fss_comparison,
+	dpi=300,
+	base_width = 2000,
+	base_height = 14000,
+	units = "px",
+	useDingbats=FALSE
+)
 
-ggsave("dendrotile.pdf",
-	dendrotile,
-	width=2000,
-	height= 12000, 
-	units="px", 
-	useDingbats=FALSE)
-
+# Optional plots
 # Circle Packing
 library(packcircles)
 library(ggplot2)

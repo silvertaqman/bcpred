@@ -57,7 +57,7 @@ mix <- mix %>%
 	mutate(across(!frequence, factor))
 rm(mixbal)
 
-levels(mix$Class) <- c("Negativo","Positivo")
+levels(mix$Class) <- c("Control","Paciente")
 
 # Data barplot (before)
 
@@ -72,7 +72,7 @@ a <- mix %>%
     "Tipo de Variable",
      values = c("#5E1E5B","#F89B0F")
      )+
-  xlab("¿Presenta cáncer?")+
+  xlab("Estado")+
 	ylab("Frecuencia")+
   theme(
   	legend.position="bottom",
