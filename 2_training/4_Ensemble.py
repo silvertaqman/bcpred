@@ -20,7 +20,7 @@ bc_input = bc.iloc[0:466, 0:300]
 bc_output = bc['Class']
 
 # Metrics (Every model)
-from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, mean_squared_error, log_loss
+from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, mean_squared_error, f1
 
 # Data partition (mathematical notation)
 from sklearn.model_selection import train_test_split as tts
@@ -65,7 +65,6 @@ joblib.dump(bagmlp, "./ensemble_models/bagmlp.pkl")
 # Adaboost
 # Loading methods for svm and lr
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.model_selection import cross_validate as cv
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -166,33 +165,9 @@ mlp_3 = MLPClassifier(activation="relu", alpha=0.0001, hidden_layer_sizes=(20, 1
 estimators = [('mlp_1', mlp_1), ('mlp_2', mlp_2), ('mlp_3', mlp_3)]
 hte = VotingClassifier(estimators, voting='soft').fit(X,y)
 hte.score(Xt,yt)
-joblib.dump(hte,"./ensemble_models/hte.pkl")x = c("bagging_learning_curve.csv",
-"boosting_learning_curve.csv",
-"learning_curve.csv",
-"voting_learning_curve.csv",
-"stacking_learning_curve.csv")
-names = c("bagging_lc.pdf",
-"bagging_sc.pdf",
-"bagging_pr.pdf",
-"boosting_lc.pdf",
-"boosting_sc.pdf",
-"boosting_pr.pdf",
-"opt_lc.pdf",
-"opt_sc.pdf",
-"opt_pr.pdf",
-"voting_lc.pdf",
-"voting_sc.pdf",
-"voting_pr.pdf",
-"stacking_lc.pdf",
-"stacking_sc.pdf",
-"stacking_pr.pdf")
-# Generate images
-for(i in 1:5) lsp(x[i],names[(3*i-2):(3*i)])
+joblib.dump(hte,"./ensemble_models/hte.pkl")
 
 votmodels = [hard_ensemble, soft_ensemble, hte]
-
-# printing log loss between actual and predicted value
-#print("log_loss: ", log_loss(yt, yp))
 
 ###################################################################
 # Stacking: train multiple models together
@@ -212,19 +187,30 @@ joblib.dump(stack_2, "./ensemble_models/stacking_2.pkl")
 joblib.dump(stack_3, "./ensemble_models/stacking_3.pkl")
 
 stacks = [stack_1, stack_2, stack_3]
-# load previous models
-#bagrbf = joblib.load("./ensemble_models/bagrbf.pkl.gz")
-#baglr = joblib.load("./ensemble_models/baglr.pkl.gz")
-#bagmlp = joblib.load("./ensemble_models/bagmlp.pkl.gz")
-#adarbf = joblib.load("./ensemble_models/adarbf.pkl.gz")
-#adalr = joblib.load("./ensemble_models/adalr.pkl.gz")
-#adadtc = joblib.load("./ensemble_models/adadtc.pkl.gz")
-#
 
+# load previous models
+bagrbf = joblib.load("./ensemble_models/bagrbf.pkl.gz")
+baglr = joblib.load("./ensemble_models/baglr.pkl.gz")
+bagmlp = joblib.load("./ensemble_models/bagmlp.pkl.gz")
+adarbf = joblib.load("./ensemble_models/adarbf.pkl.gz")
+adalr = joblib.load("./ensemble_models/adalr.pkl.gz")
+adadtc = joblib.load("./ensemble_models/adadtc.pkl.gz")
+hard_ensemble = joblib.load("./ensemble_models/hard_ensemble.pkl.gz")
+soft_ensemble = joblib.load("./ensemble_models/soft_ensemble.pkl.gz")
+hte = joblib.load("./ensemble_models/hte.pkl.gz")
+stack_1 = joblib.load("./ensemble_models/stacking_1.pkl.gz")
+stack_2 = joblib.load("./ensemble_models/stacking_2.pkl.gz")
+stack_3 = joblib.load("./ensemble_models/stacking_3.pkl.gz")
+bagmodels = [bagrbf, baglr, bagmlp]
+bosmodels = [adarbf, adalr, adadtc]
+votmodels = [hard_ensemble, soft_ensemble, hte]
+stacks = [stack_1, stack_2, stack_3]
+##############################################################
 # Metrics for validation (Bagging)
+##############################################################
 # K-fold Validation
 kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
+scoring = ['accuracy','recall','precision','f1']
 kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bagmodels]
 
 # K-stratified Validation
@@ -236,7 +222,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
 metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
-model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+model = np.repeat(['SVM', 'LR', 'MLP'], 10)
 metrics['model'] = np.tile(model, 6)
 metrics['method'] = np.repeat(['kfold','stratified'],90)
 metrics.to_csv('./ensemble_metrics/bagging_validation_metrics.csv')
@@ -249,7 +235,7 @@ size_mlp, score_mlp, tscore_mlp, ft_mlp,_ = learning_curve(bagmlp, X, y, cv=10, 
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_svm, size_lr, size_mlp))
-metrics['models'] = 10*["svm"]+10*['lr']+10*['mlp']
+metrics['models'] = 10*["SVM"]+10*['LR']+10*['MLP']
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_mlp])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_mlp])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_mlp]))],axis=1)
 metrics.columns = ['train_size',
 	'models',
@@ -284,12 +270,12 @@ metrics.columns = ['train_size',
 	'fit_times_fold9',
 	'fit_times_fold10']
 metrics.to_csv('./ensemble_metrics/bagging_learning_curve.csv')
-
+##############################################################
 # Metrics for validation (Adaboost)
-
+##############################################################
 # K-fold Validation
 kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
+scoring = ['accuracy','recall','precision','f1']
 kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in bosmodels]
 
 # K-stratified Validation
@@ -301,7 +287,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
 metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
-model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+model = np.repeat(['SVM', 'LR', 'DTC'], 10)
 metrics['model'] = np.tile(model, 6)
 metrics['method'] = np.repeat(['kfold','stratified'],90)
 metrics.to_csv('./ensemble_metrics/boosting_validation_metrics.csv')
@@ -314,7 +300,7 @@ size_dtc, score_dtc, tscore_dtc, ft_dtc,_ = learning_curve(adadtc, X, y, cv=10, 
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_svm, size_lr, size_dtc))
-metrics['models'] = 10*["svm"]+10*['lr']+10*['dtc']
+metrics['models'] = 10*["SVM"]+10*['LR']+10*['DTC']
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_svm, score_lr, score_dtc])), pd.DataFrame(np.concatenate([tscore_svm, tscore_lr, tscore_dtc])),pd.DataFrame(np.concatenate([ft_svm, ft_lr, ft_dtc]))],axis=1)
 metrics.columns = metrics.columns = ['train_size',
 	'models',
@@ -349,10 +335,12 @@ metrics.columns = metrics.columns = ['train_size',
 	'fit_times_fold9',
 	'fit_times_fold10']
 metrics.to_csv('./ensemble_metrics/boosting_learning_curve.csv')
+##############################################################
 # Metrics for validation (Voting)
+##############################################################
 # K-fold Validation
 kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
+scoring = ['accuracy','recall','precision','f1']
 kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in votmodels]
 
 # K-stratified Validation
@@ -364,7 +352,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
 metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
-model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+model = np.repeat(['HARD', 'SOFT', 'HTE'], 10)
 metrics['model'] = np.tile(model, 6)
 metrics['method'] = np.repeat(['kfold','stratified'],90)
 metrics.to_csv('./ensemble_metrics/voting_validation_metrics.csv')
@@ -377,7 +365,7 @@ size_hte, score_hte, tscore_hte, ft_hte,_ = learning_curve(hte, X, y, cv=10, tra
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_hard, size_soft, size_hte))
-metrics['models'] = 10*["hard"]+10*['soft']+10*['hte']
+metrics['models'] = 10*["HARD"]+10*['SOFT']+10*['HTE']
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_hard, score_soft, score_hte])), pd.DataFrame(np.concatenate([tscore_hard, tscore_soft, tscore_hte])),pd.DataFrame(np.concatenate([ft_hard, ft_soft, ft_hte]))],axis=1)
 metrics.columns = metrics.columns = ['train_size',
 	'models',
@@ -412,10 +400,12 @@ metrics.columns = metrics.columns = ['train_size',
 	'fit_times_fold9',
 	'fit_times_fold10']
 metrics.to_csv('./ensemble_metrics/voting_learning_curve.csv')
+##############################################################
 # Metrics for validation (Stacking)
+##############################################################
 # K-fold Validation
 kfcv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=74)
-scoring = ['accuracy','recall','precision','roc_auc']
+scoring = ['accuracy','recall','precision','f1']
 kfv = [cv(p, bc_input, bc_output, scoring=scoring, cv=kfcv, n_jobs=-1, error_score='raise') for p in stacks]
 
 # K-stratified Validation
@@ -427,7 +417,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['repeat'] = 60*['fold'+str(i+1) for i in range(3)]
 metrics['folds'] = 18*['fold'+str(i+1) for i in range(10)]
-model = np.repeat(['svmrbf', 'lr', 'mlp'], 10)
+model = np.repeat(['STACK1', 'STACK2', 'STACK3'], 10)
 metrics['model'] = np.tile(model, 6)
 metrics['method'] = np.repeat(['kfold','stratified'],90)
 metrics.to_csv('./ensemble_metrics/stacking_validation_metrics.csv')
@@ -440,7 +430,7 @@ size_stack3, score_stack3, tscore_stack3, ft_stack3,_ = learning_curve(stack_3, 
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_stack1, size_stack2, size_stack3))
-metrics['models'] = 10*["stack_1"]+10*['stack_2']+10*['stack_3']
+metrics['models'] = 10*["STACK1"]+10*['STACK2']+10*['STACK3']
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_stack1, ft_stack2, ft_stack3]))],axis=1)
 metrics.columns = metrics.columns = ['train_size',
 	'models',
@@ -476,8 +466,40 @@ metrics.columns = metrics.columns = ['train_size',
 	'fit_times_fold10']
 metrics.to_csv('./ensemble_metrics/stacking_learning_curve.csv')
 
+# Validation of predictions
+# Saving predicted values for cut-off evaluation (ROC curves)
+yp = pd.DataFrame()
+yp["Reality"]=bc_output
+yp["SVM"]=svmrbf.decision_function(bc_input)
+yp["LR"]=lr.decision_function(bc_input)
+yp["MLP"]=pd.DataFrame(mlp.predict_proba(bc_input))[1]
+yp["BagSVM"]=bagrbf.decision_function(bc_input)
+yp["BagLR"]=baglr.decision_function(bc_input)
+yp["BagMLP"]=pd.DataFrame(bagmlp.predict_proba(bc_input))[1]
+yp["AdaDTC"]=adadtc.decision_function(bc_input)
+yp["AdaLR"]=adalr.decision_function(bc_input)
+yp["AdaSVM"]=adarbf.decision_function(bc_input)
+# Platting scale for all data
+hard_e = VotingClassifier(estimators, voting='hard').fit(X,y)
+platt = pd.DataFrame(hard_e.predict(bc_input))
+yp["Hard"]=hard_ensemble.decision_function(platt)
+yp["Soft"]=pd.DataFrame(soft_ensemble.predict_proba(bc_input))[1]
+yp["HTE"]=pd.DataFrame(hte.predict_proba(bc_input))[1]
+yp["STACK_1"]=stack_1.decision_function(bc_input)
+yp["STACK_2"]=stack_2.decision_function(bc_input)
+yp["STACK_3"]=stack_3.decision_function(bc_input)
+yp.to_csv("./predictions.csv")
+
 # Buscar un nuevo discriminador de caracteristicas, diferente de SelectKBest(Chi2)
 # Usar funciones equivalentes / tema de combinatoria 
 # Hasta comparar el discriminador y los modelos de clasificacion. 
 # RandomSearch
 # Intentar kfold con 10
+
+# Tabla comparativa para ver cual es mejor
+# Comparar curvas PR por cada metodo y curvas de AUC-ROC
+
+# Verificar una ganancia del mejor algoritmo con el algoritmo mlp original (100*(93.5 - 95.9)/93.5
+# revisar las capas del mlp original y comparar 
+# revisar la funcion de activacion (relu, tanh, etc)
+

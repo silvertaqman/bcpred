@@ -14,7 +14,7 @@ bc_output = bc['Class']
 
 # Data partition (mathematical notation)
 from sklearn.model_selection import train_test_split as tts
-X, Xt, y, yt = tts(bc_input,bc_output,random_state=74)
+X, Xt, y, yt = tts(bc_input,bc_output,random_state=74) #75:25
 
 # Training and Tuning models
 

@@ -43,7 +43,13 @@ with open("invariant_features.txt","w") as f:
 F = FS
 
 ## Feature Subset Selection 
+from scipy.stats import pearsonr
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import LassoCV
+from sklearn.linear_model import ElasticNetCV
+
 # Compare methods: kbest, percentile, False positive rate, false discovery rate, family wise, ridgeCV and Tree Model based
 from sklearn.ensemble import ExtraTreesClassifier
 selector = {
@@ -70,22 +76,38 @@ importance = np.abs(clf.coef_)
 threshold = np.sort(importance)[-300] + 0.01
 ridge = SelectFromModel(clf, threshold=threshold).fit(X, y)
 
-# Final comparation
+# LassoCV
+clf = LassoCV(alphas=np.logspace(-5,5,100)).fit(X,y)
+importance = np.abs(clf.coef_)
+threshold = np.sort(importance)[-300] + 0.01
+lasso = SelectFromModel(clf, threshold=threshold).fit(X, y)
+
+# ElasticNetCV
+clf = ElasticNetCV(l1_ratio = [0.05, 0.1, 0.5, 0.9, 0.95],alphas=np.logspace(-5,5,200), cv=10).fit(X,y)
+importance = np.abs(clf.coef_)
+threshold = np.sort(importance)[-300] + 0.01
+elasticnet = SelectFromModel(clf, threshold=threshold).fit(X, y)
+
+# Final comparison
 
 sel=[p.fit_transform(X,y) for p in selector.values()]
-selector['ridgeCV']=[]
 features = [p.get_support(indices=True) for p in selector.values()]
 features.append(ridge.get_support(indices=True))
+features.append(lasso.get_support(indices=True))
+features.append(elasticnet.get_support(indices=True))
 total_feat=[]
 for i in features:
 	total_feat.append(np.array([F[k] for k in i]))
 
 
+selector['ridgeCV']=[]
+selector['lassoCV']=[]
+selector['ElasticNetCV']=[]
 metrics = {k:f for k,f in zip(selector.keys(),total_feat)}
 metrics = pd.DataFrame().from_dict(metrics, orient="index").T
 metrics.to_csv("selection.csv")
 
-# Compare sel features trough euler diagrams (graphic)
+# Compare sel features trough dendrograms/heatmap (graphic)
 
 # Using kbest (as authors)
 selector = SelectKBest(chi2, k=300)

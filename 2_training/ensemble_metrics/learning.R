@@ -95,6 +95,7 @@ scalability <- function(x){
 ##################################################################################
 # Performance of the model
 ##################################################################################
+
 performance <- function(x){
 	perf <- read_csv(x) %>%
 		select(models, starts_with("fit_times_fold") , starts_with("test_score")) %>%

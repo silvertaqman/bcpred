@@ -1,0 +1,14 @@
+Network,Annotation
+MyList,WP2261|Glioblastoma signaling pathways|-41.5;hsa05200|Pathways in cancer|-40.2;hsa05215|Prostate cancer|-37.2
+MyList_MCODE_ALL,hsa05200|Pathways in cancer|-57.2;WP2261|Glioblastoma signaling pathways|-51.0;hsa05215|Prostate cancer|-46.3
+MyList_SUB1_MCODE_1,R-HSA-9603798|Class I peroxisomal membrane protein import|-18.2;R-HSA-5620922|BBSome-mediated cargo-targeting to cilium|-17.6;GO:0034464|BBSome|-15.9
+MyList_SUB1_MCODE_2,R-HSA-9675136|Diseases of DNA Double-Strand Break Repair|-35.5;R-HSA-9701190|Defective homologous recombination repair (HRR) due to BRCA2 loss of function|-35.5;R-HSA-5693579|Homologous DNA Pairing and Strand Exchange|-35.1
+MyList_SUB1_MCODE_3,hsa05215|Prostate cancer|-27.7;WP306|Focal adhesion|-25.4;hsa04510|Focal adhesion|-25.3
+MyList_SUB1_MCODE_4,hsa01522|Endocrine resistance|-18.6;M115|PID REG GR PATHWAY|-17.0;hsa05166|Human T-cell leukemia virus 1 infection|-17.0
+MyList_SUB1_MCODE_5,hsa05200|Pathways in cancer|-15.1;WP2446|Retinoblastoma gene in cancer|-12.0;WP5087|Malignant pleural mesothelioma|-11.6
+MyList_SUB1_MCODE_6,GO:0031082|BLOC complex|-20.5;GO:0060155|platelet dense granule organization|-18.9;GO:0032438|melanosome organization|-17.6
+MyList_SUB1_MCODE_7,GO:0034706|sodium channel complex|-12.4;GO:0005272|sodium channel activity|-11.3;GO:0035725|sodium ion transmembrane transport|-9.5
+MyList_SUB1_MCODE_8,"GO:1990779|glycoprotein Ib-IX-V complex|-11.7;R-HSA-9673221|Defective F9 activation|-11.4;GO:0007597|blood coagulation, intrinsic pathway|-10.9"
+MyList_SUB1_MCODE_9,R-HSA-9033241|Peroxisomal protein import|-8.1;hsa04146|Peroxisome|-7.7;GO:0005777|peroxisome|-7.0
+MyList_SUB1_MCODE_10,GO:0036038|MKS complex|-10.2;GO:0035869|ciliary transition zone|-7.9;WP4656|Joubert syndrome|-7.8
+MyList_SUB1_MCODE_11,GO:0030321|transepithelial chloride transport|-10.7;GO:0070633|transepithelial transport|-9.1;GO:0034707|chloride channel complex|-8.3

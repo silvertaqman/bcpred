@@ -31,18 +31,6 @@ b <- df %>%
         count(Coincidence) %>% 
         arrange(desc(n))
 
-tileplot <- df %>%
-	count(Method, Coincidence) %>%
-	mutate(
-#		Method = factor(Method, levels=a$Method),
-		Coincidence = factor(Coincidence, levels=partition_leaves(dendro)[[1]])) %>%
-	ggplot(aes(Method, Coincidence, fill= n)) + 
-  geom_tile()+
-  theme(
-  	axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-  	axis.text.y=element_text(size=5),
-  	legend.position="none")
-
 # Plot a dendrogram
 scores <- df %>%
 	count(Method, Coincidence) %>%
@@ -54,6 +42,18 @@ scores <- df %>%
 d = dist(scores, method = "binary")
 hc = hclust(d, method="ward.D")
 dendro <- as.dendrogram(hc)
+
+tileplot <- df %>%
+	count(Method, Coincidence) %>%
+	mutate(
+#		Method = factor(Method, levels=a$Method),
+		Coincidence = factor(Coincidence, levels=partition_leaves(dendro)[[1]])) %>%
+	ggplot(aes(Method, Coincidence, fill= n)) + 
+  geom_tile()+
+  theme(
+  	axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+  	axis.text.y=element_text(size=5),
+  	legend.position="none")
 
 dendroplot <- 
     ggdendrogram(

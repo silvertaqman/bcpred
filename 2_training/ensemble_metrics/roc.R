@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(plotROC)
+library(pilot)
 # Generates a ROC curve with ggplot
 pred <- read_csv("../predictions.csv") %>%
 	select(svmrbf, lr, mlp, Reality) %>%
