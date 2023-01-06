@@ -12,11 +12,24 @@ bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
 bc_input = bc.iloc[0:466, 0:300]
 bc_output = bc['Class']
 
-# Data partition (mathematical notation)
+# Data partition (mathematical notation) at 75:15:10
 from sklearn.model_selection import train_test_split as tts
-X, Xt, y, yt = tts(bc_input,bc_output,random_state=74) #75:25
+X, Xt, y, yt = tts(
+	bc_input,
+	bc_output,
+	random_state=74,
+	test_size=0.25) # 1-trainratio
 
+Xv, Xt, yv, yt = tts(
+	Xt,
+	yt,
+	random_state=74,
+	test_size=0.4) #70:20:10 # testratio/(testratio+validationratio)
 # Training and Tuning models
+
+# Original model descripted
+firstmlp = MLPClassifier().fit(X,y)
+joblib.dump(firstmlp,"./models/firstmlp.pkl")
 
 # RBF
 # 1) gamma from 0.01 to 1 y C from 1 to 100 becomes 0.9484
@@ -27,7 +40,7 @@ param_grid = {
 }
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
-gs = GridSearchCV(SVC(), param_grid, cv=5).fit(X,y) # lot of time
+gs = GridSearchCV(SVC(), param_grid, cv=10).fit(X,y) # lot of time
 # training with best parameters
 svmrbf = SVC(**gs.best_params_).fit(X,y)
 # Export metrics
@@ -47,7 +60,7 @@ param_grid = {
         'max_iter': [50000]
 }
 from sklearn.linear_model import LogisticRegression as LR
-gs = GridSearchCV(LR(), param_grid, cv=5).fit(X,y)
+gs = GridSearchCV(LR(), param_grid, cv=10).fit(X,y)
 # training with best parameters
 lr = LR(**gs.best_params_).fit(X,y)
 # Export metrics
@@ -63,15 +76,12 @@ joblib.dump(lr, "./models/bc_lr.pkl")
 
 '''
 hidden_layer = [x for x in itertools.product((128*4,128*3,128*2,128*1,128/2,128/4,128/8), repeat=2)]  # repeat indica el numero de capas.
-Cambiar el 128, buscar la curva de sobreajuste para los 4. 
-Agregar desviacion estandar
 '''
-
 param_grid = {
         'hidden_layer_sizes': [x for x in itertools.product((100,80,60,40,20,15), repeat=2)],
         'activation': ['logistic', 'relu'],
         'solver': ['adam'],
-        'alpha': [0.0001],
+        'alpha': [0.0001,0.01],
         'learning_rate_init': np.logspace(-3,-1,11),
         'random_state': [74],
         'max_iter': [50000],
