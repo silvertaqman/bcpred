@@ -19,7 +19,7 @@ scaler.fit(cancer.iloc[0:377, 3:8744])
 scaled = scaler.fit_transform(cancer.iloc[0:377, 3:8744])
 cancer_s = pd.DataFrame(scaled, columns = cancer.iloc[0:377, 3:8744].columns)
 ### exporting scaler: loadable with joblib.load("minmax.pkl"")
-joblib.dump(scaler, "minmax.pkl") 
+joblib.dump(scaler, "minmax.pkl")
 
 ## Remove duplicated values (No duplicates)
 cancer_s.drop_duplicates(keep=False, inplace=True)
@@ -109,7 +109,7 @@ metrics.to_csv("selection.csv")
 
 # Compare sel features trough dendrograms/heatmap (graphic)
 
-# Using kbest (as authors)
+# Using kbest Chi2
 selector = SelectKBest(chi2, k=300)
 X = selector.fit_transform(X, y)
 
