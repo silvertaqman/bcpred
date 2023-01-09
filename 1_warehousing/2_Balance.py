@@ -14,7 +14,6 @@ Features = list(X.columns)
 
 # SMOTE
 from imblearn.over_sampling import SMOTE
-<<<<<<< HEAD
 smote = SMOTE(random_state=123)
 Xs, ys = smote.fit_resample(X.values, y)
     
@@ -22,7 +21,6 @@ Xs, ys = smote.fit_resample(X.values, y)
 cancer = pd.DataFrame(Xs,columns=Features)
 cancer['Class'] = ys # add class column
 cancer.to_csv('Mix_BreastCancer_srbal.csv', index=False)
-=======
 smote = SMOTE(random_state=74)
 X, y = smote.fit_resample(X.values, y)
     
