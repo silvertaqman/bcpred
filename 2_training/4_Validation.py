@@ -36,6 +36,18 @@ Xv, Xt, yv, yt = tts(
 	random_state=74,
 	test_size=0.4) #70:20:10 # testratio/(testratio+validationratio)
 #######################################################################
+#Arrange for hard voting
+# Max/Hard Voting
+from sklearn.ensemble import VotingClassifier
+from sklearn.calibration import CalibratedClassifierCV
+estimators = [
+	('radial',CalibratedClassifierCV(svmrbf).fit(X,y)),
+	('logistic',lr),
+	('multi',mlp)]
+hard_ensemble = VotingClassifier(
+	estimators,
+	voting='hard').fit(X,y)
+platt = pd.DataFrame(hard_ensemble.predict(Xt))
 # load previous models (16 models)
 firstmlp = joblib.load("./models/firstmlp.pkl.gz")
 svmrbf = joblib.load("./models/bc_svmrbf.pkl.gz")
@@ -74,6 +86,7 @@ yp["bagmlp"]=np.array(pd.DataFrame(bagmlp.predict_proba(Xt))[1])
 yp["adarbf"]=adarbf.decision_function(Xt)
 yp["adalr"]=adalr.decision_function(Xt)
 yp["adadtc"]=adadtc.decision_function(Xt)
+
 yp["hard_ensemble"]=hard_ensemble.decision_function(platt)
 yp["soft_ensemble"]=np.array(pd.DataFrame(soft_ensemble.predict_proba(Xt))[1])
 yp["hte"]=np.array(pd.DataFrame(hte.predict_proba(Xt))[1])
@@ -88,12 +101,12 @@ yp.to_csv("./predictions.csv")
 from sklearn.model_selection import cross_validate as cv
 from sklearn.metrics import make_scorer, accuracy_score, roc_auc_score, recall_score, f1_score, log_loss, precision_score
 scoring = ['accuracy','recall','precision','roc_auc','f1','neg_log_loss']
-kfv = [cv(p, X, y, cv=10, scoring= scoring, n_jobs=-1) for p in models]
+kfv = [cv(p, Xv, yv, cv=10, scoring= scoring, n_jobs=-1) for p in models]
 
 # K-stratified Validation
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=10,shuffle=True,random_state=74)
-ksfv = [cv(p, X, y, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
+ksfv = [cv(p, Xv, yv, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
 metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 
 # Exporting metrics to csv
@@ -126,7 +139,7 @@ size_stack3, score_stack3, tscore_stack3, ft_stack3,_ = learning_curve(stack_3, 
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_fmlp, size_svm, size_lr, size_mlp, size_bagsvm, size_baglr, size_bagmlp, size_adasvm, size_adalr, size_adadtc, size_hard, size_soft, size_hte, size_stack1, size_stack2, size_stack3 ))
-metrics['models'] = np.append(np.repeat(modelsname, 10),np.repeat(modelsname, 10))
+metrics['models'] = np.repeat(modelsname, 10)
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_fmlp, score_svm, score_lr, score_mlp, score_bagsvm, score_baglr, score_bagmlp, score_adasvm, score_adalr, score_adadtc, score_hard, score_soft, score_hte, score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_fmlp, tscore_svm, tscore_lr, tscore_mlp, tscore_bagsvm, tscore_baglr, tscore_bagmlp, tscore_adasvm, tscore_adalr, tscore_adadtc, tscore_hard, tscore_soft, tscore_hte, tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_fmlp, ft_svm, ft_lr, ft_mlp, ft_bagsvm, ft_baglr, ft_bagmlp, ft_adasvm, ft_adalr, ft_adadtc, ft_hard, ft_soft, ft_hte, ft_stack1, ft_stack2, ft_stack3]))],axis=1)
 metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in range(1,11)]+['test_scores_fold_%d'% x for x in range(1,11)]+['fit_times_fold_%d'% x for x in range(1,11)]
 ############################################################
@@ -138,7 +151,6 @@ metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in ra
 # revisar la funcion de activacion (relu, tanh, etc)
 ############################################################
 metrics.to_csv('./learning_curve.csv')
-
 '''
 # Export data for overfit validation curve
 from sklearn.model_selection import validation_curve
