@@ -3,10 +3,11 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(knitr)
+library(gt)
 
 # Generates a table for summarise statistics
 # read_csv("../validation_curve.csv") %>%
-tabla <- read_csv("validation_metrics.csv") %>%
+tabla <- read_csv("../validation_metrics.csv") %>%
 	select(-...1, -fit_time, -score_time) %>%
 	group_by(model,method) %>%
 	summarise(across(!folds, mean)) %>%
@@ -21,4 +22,4 @@ tabla <- read_csv("validation_metrics.csv") %>%
        test_roc_auc="AUROC")
 
 gtsave(tabla, "estadisticos.rtf")
-# gtsave("tab_1.tex"), gtsave("tab_1.rtf")
+#gtsave("tab_1.tex"), gtsave("tab_1.rtf")

@@ -57,7 +57,7 @@ gs_svmrbf = GridSearchCV(
 	cv=10).fit(X,y) # lot of time
 # training with best parameters
 joblib.dump(gs_svmrbf, "./gridsearch/gs_svmrbf.pkl")
-svmrbf = SVC(**gs_svmrbf.best_params_).fit(X,y)
+svmrbf = SVC(**gs_svmrbf.best_params_,probability=True).fit(X,y)
 joblib.dump(svmrbf, "./models/bc_svmrbf.pkl")
 
 # Logistic regression
@@ -104,7 +104,7 @@ gs_mlp = GridSearchCV(
 	cv=10).fit(X,y)
 joblib.dump(gs_mlp, "./gridsearch/gs_mlp.pkl")
 # training with best parameters
-mlp = MLPClassifier(**gs.best_params_).fit(X,y)
+mlp = MLPClassifier(**gs_mlp.best_params_).fit(X,y)
 joblib.dump(mlp, "./models/bc_mlp.pkl")
 
 models = [firstmlp, svmrbf, lr, mlp]
