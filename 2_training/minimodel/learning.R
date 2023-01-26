@@ -106,7 +106,7 @@ performance <- function(x){
 	return(perf)
 }
 # Save all figures in pdf
-x = "../learning_curve.csv"
+x = "./minilearning_curve.csv.gz"
 fig <- (learningcurve(x)+scalability(x)+performance(x))+plot_layout(guides = 'keep')
 # Generate images
 ggsave(

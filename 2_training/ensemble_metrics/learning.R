@@ -29,15 +29,15 @@ theme_set(
 ##################################################################################
 learningcurve <- function(x){
 	ler <- read_csv(x) %>%
-		select(train_size, models, starts_with("train_scores"), starts_with("test_scores")) %>%
+		select(train_size, models, starts_with("train_scores"), starts_with("validation_scores")) %>%
 		rowwise() %>%
 		transmute(
 			train_size = train_size,
 			models = models,
 			train_score = mean(c_across(starts_with("train_scores"))),
 			train_deviation = sd(c_across(starts_with("train_scores"))),
-			test_score = mean(c_across(starts_with("test_scores"))),
-			test_deviation = sd(c_across(starts_with("test_scores")))) %>%
+			validation_score = mean(c_across(starts_with("validation_scores"))),
+			validation_deviation = sd(c_across(starts_with("validation_scores")))) %>%
 		ggplot(aes(x=train_size))+
 				geom_ribbon(
 					aes(
@@ -47,10 +47,10 @@ learningcurve <- function(x){
 		geom_line(aes(y = train_score, colour=models))+
 				geom_ribbon(
 					aes(
-						ymin = test_score-test_deviation,
-						ymax = test_score+test_deviation),
+						ymin = validation_score-validation_deviation,
+						ymax = validation_score+validation_deviation),
 					fill = "grey90")+
-		geom_line(aes(y = test_score, colour=models))+
+		geom_line(aes(y = validation_score, colour=models))+
 		facet_wrap(~models, scales = "free_y")+
 		scale_color_pilot()+
 		labs(title="Learning Curve")
@@ -85,21 +85,21 @@ scalability <- function(x){
 ##################################################################################
 performance <- function(x){
 	perf <- read_csv(x) %>%
-		select(models, starts_with("fit_times_fold") , starts_with("test_score")) %>%
+		select(models, starts_with("fit_times_fold") , starts_with("validation_score")) %>%
 			pivot_longer(cols=starts_with("fit_times_fold"), names_to="fold", values_to="fit_times") %>%
 			rowwise() %>%
 			transmute(
 				models = models,
 				fit_times = fit_times,
-				test_score = mean(c_across(starts_with("test_score"))),
-				deviation = sd(c_across(starts_with("test_score")))) %>%
+				validation_score = mean(c_across(starts_with("validation_score"))),
+				deviation = sd(c_across(starts_with("validation_score")))) %>%
 			ggplot(aes(x=fit_times, group=models))+
 				geom_ribbon(
 					aes(
-						ymin = test_score-deviation,
-						ymax = test_score+deviation),
+						ymin = validation_score-deviation,
+						ymax = validation_score+deviation),
 					fill = "grey90")+
-				geom_line(aes(y = test_score, colour=models))+
+				geom_line(aes(y = validation_score, colour=models))+
 			facet_wrap(~models, scales="free")+
 		scale_color_pilot()+
 		labs(title="Performance Plot")

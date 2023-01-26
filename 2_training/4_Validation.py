@@ -112,7 +112,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 # Exporting metrics to csv
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['folds'] = 32*['fold'+str(i+1) for i in range(10)]
-modelsname = ['firstmlp','svmrbf', 'lr', 'mlp','bagrbf','baglr','bagmlp','adarbf','adalr','adadtc','hard_ensemble','soft_ensemble','hte','stack_1','stack_2','stack_3']
+modelsname = ['firstmlp','svmrbf','lr', 'mlp', 'bagrbf','baglr','bagmlp','adarbf','adalr','adadtc', 'hard_ensemble','soft_ensemble','hte','stack_1','stack_2','stack_3']
 metrics['model'] = np.append(np.repeat(modelsname, 10),np.repeat(modelsname, 10))
 metrics['method'] = np.repeat(['kfold','stratified'],160)
 metrics.to_csv('./validation_metrics.csv')
@@ -141,7 +141,7 @@ metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_fmlp, size_svm, size_lr, size_mlp, size_bagsvm, size_baglr, size_bagmlp, size_adasvm, size_adalr, size_adadtc, size_hard, size_soft, size_hte, size_stack1, size_stack2, size_stack3 ))
 metrics['models'] = np.repeat(modelsname, 10)
 metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_fmlp, score_svm, score_lr, score_mlp, score_bagsvm, score_baglr, score_bagmlp, score_adasvm, score_adalr, score_adadtc, score_hard, score_soft, score_hte, score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_fmlp, tscore_svm, tscore_lr, tscore_mlp, tscore_bagsvm, tscore_baglr, tscore_bagmlp, tscore_adasvm, tscore_adalr, tscore_adadtc, tscore_hard, tscore_soft, tscore_hte, tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_fmlp, ft_svm, ft_lr, ft_mlp, ft_bagsvm, ft_baglr, ft_bagmlp, ft_adasvm, ft_adalr, ft_adadtc, ft_hard, ft_soft, ft_hte, ft_stack1, ft_stack2, ft_stack3]))],axis=1)
-metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in range(1,11)]+['test_scores_fold_%d'% x for x in range(1,11)]+['fit_times_fold_%d'% x for x in range(1,11)]
+metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in range(1,11)]+['validation_scores_fold_%d'% x for x in range(1,11)]+['fit_times_fold_%d'% x for x in range(1,11)]
 ############################################################
 # Tabla comparativa para ver cual es mejor
 # Comparar curvas PR por cada metodo y curvas de AUC-ROC

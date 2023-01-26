@@ -28,7 +28,7 @@ theme_set(
 ##################################################################################
 # barplot for model selection
 ##################################################################################
-datos <- read_csv("./minivalidation_metrics.csv")
+datos <- read_csv("./minivalidation_metrics.csv.gz")
 barmetrix <- function(x){
 	bam <- x %>%
 		select(!ends_with("_time"), !...1) %>%
@@ -78,9 +78,36 @@ boxmetrix <- function(x){
 }
 
 #ggsave("Metrics2.png",boxmetrix(datos),dpi=320,width = 2000, height = 1500,bg = "white", units = "px")
+#############################33
+# ROC-Curve
+###############################
+library(plotROC)
+
+# Generates a ROC curve with ggplot
+pred <- read_csv("./minipredictions.csv.gz") %>%
+	select(!...1) %>%
+	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
+	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
+		geom_roc(n.cuts=20,labels=FALSE)+
+		style_roc(theme = theme_grey)+
+		scale_color_pilot()
+
+# Los metodos STACK1, AdaDTC y AdaSVM tiene los AUC mas altos
+positions<-arrange(calc_auc(pred),desc(AUC))
+positions$AUC <- round(positions$AUC, 3)
+pred <- read_csv("./minipredictions.csv.gz") %>%
+	select(!...1) %>%
+	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
+	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
+		geom_roc(n.cuts=20,labels=FALSE)+
+		style_roc(theme = theme_grey)+
+		scale_color_pilot(
+			breaks=positions$Model, 
+			labels = paste0(positions$Model,': (',positions$AUC,')'))+
+		labs(color="Model: (AUC)")
 
 # all merged
-all <- (barmetrix(datos)/boxmetrix(datos))+
+all <- (pred + barmetrix(datos))/boxmetrix(datos)+
 	plot_layout(guides = 'collect')+
 	plot_annotation(tag_levels="A")
 ggsave("all.png",all,dpi=320, width = 4000, height = 4000,bg = "white", units = "px")
