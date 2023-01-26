@@ -107,5 +107,7 @@ pred <- read_csv("../predictions.csv") %>%
 		labs(color="Model: (AUC)")
 
 # all merged
-all <- ((pred+barmetrix(datos))/boxmetrix(datos))+plot_layout(guides = 'collect')
+all <- ((pred+barmetrix(datos))/boxmetrix(datos))+
+	plot_layout(guides = 'collect')+
+	plot_annotation(tag_levels="A")
 ggsave("all.png",all,dpi=320, width = 5500, height = 4000,bg = "white", units = "px")
