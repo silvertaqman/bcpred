@@ -107,12 +107,11 @@ warehouse <- mix %>%
   	scale_fill_pilot()
 
 # Merge two plots
-ggsave("aabarplot.pdf", 
+ggsave("balance.png", 
 	warehouse,
 	width = 3200, 
 	height = 1600,
-	units = "px",
-	useDingbats=FALSE)
+	units = "px")
 
 # FSS
 # TilePlot

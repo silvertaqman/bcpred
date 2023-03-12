@@ -1,5 +1,16 @@
 # Spencer
 
+## Usage
+
+AccNo. CIDH920105  Normalized average hydrophobicity scales (Cid et al., 1992)
+AccNo. BHAR880101  Average flexibility indices (Bhaskaran-Ponnuswamy, 1988)
+AccNo. CHAM820101  Polarizability parameter (Charton-Charton, 1982)
+AccNo. CHAM820102  Free energy of solution in water, kcal/mole (Charton-Charton, 1982)
+AccNo. CHOC760101  Residue accessible surface area in tripeptide (Chothia, 1976)
+AccNo. BIGC670101  Residue volume (Bigelow, 1967)
+AccNo. CHAM810101  Steric parameter (Charton, 1981)
+AccNo. DAYM780201  Relative mutability (Dayhoff et al., 1978b)
+
 ## Describe relation between proteic composition and breast cancer 
 
 Predict breast cancer related proteins

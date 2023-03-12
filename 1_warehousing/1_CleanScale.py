@@ -113,9 +113,8 @@ metrics.to_csv("selection.csv")
 selector = SelectKBest(chi2, k=300)
 X = selector.fit_transform(X, y)
 
-### export unselected features
 ## Create and export the working dataframe: scaled and reduced
-cancer_sr = pd.DataFrame(X, columns=FS)
+cancer_sr = pd.DataFrame(Xs, columns=FS)
 cancer_sr['Class'] = y
 cancer_sr.to_csv("./Mix_BC_sr.csv", index=False)
 '''
