@@ -55,17 +55,16 @@ barmetrix <- function(x){
   	scale_x_discrete(limits = order$model)
 	return(bam)
 }
-# Hard_ensemble, adarbf and bagmlp are top3
 
 #ggsave("Metrics.png",barmetrix(datos),dpi=320,width = 2000, height = 1500,bg = "white", units = "px")
 ##################################################################################
 # Boxplot of metrics comparison
 ##################################################################################
 boxmetrix <- function(x){
-	bxm <- x %>%
+	x %>%
 		select(!(ends_with("_time")|...1)) %>%
 		pivot_longer(
-			cols=starts_with("test_"), 
+			cols=starts_with("validation_"), 
 			names_to="Test", 
 			values_to="Metric") %>%
 		mutate_if(is.character, as.factor) %>%
@@ -74,10 +73,9 @@ boxmetrix <- function(x){
 #				geom_hline(yintercept=0.94)+
 		facet_wrap(~Test, scales="free_y")+
 		scale_fill_pilot()+labs(fill = 'Method')
-		return(bxm)
 }
 
-#ggsave("Metrics2.png",boxmetrix(datos),dpi=320,width = 2000, height = 1500,bg = "white", units = "px")
+#ggsave("Metrics.png",boxmetrix(datos),dpi=320,width = 4000, height = 2000,bg = "white", units = "px")
 #############################33
 # ROC-Curve
 ###############################

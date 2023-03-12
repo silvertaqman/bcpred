@@ -35,6 +35,13 @@ Xv, Xt, yv, yt = tts(
 	yt,
 	random_state=74,
 	test_size=0.4) #70:20:10 # testratio/(testratio+validationratio)
+
+F = list(X.columns)
+# Selected features
+with open("Selected_Features.txt","w") as f:
+	[f.write("%s\n" % i) for i in F]
+
+
 # Training and Tuning models
 
 # Original model descripted
@@ -320,7 +327,7 @@ joblib.dump(hte,"./ensemble_models/hte.pkl")
 votmodels = [hard_ensemble, soft_ensemble, hte]
 
 ###################################################################
-# Stacking: train multiple models together
+# Stacking: train multiple models hierarchically
 ###################################################################
 # With sklearn
 
