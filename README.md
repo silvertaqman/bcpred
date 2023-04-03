@@ -1,5 +1,7 @@
 # Spencer
 
+This repository contains the workflow adn data required to train a Multilyer Percetron based on Biomarker Identification on Protein Sequences obtained through MALDI-TOF Mass Spectrometry. Also, contains the ready-to-use ML model accesible through Python (>=3.9) and related packages. 
+
 ## Usage
 
 AccNo. CIDH920105  Normalized average hydrophobicity scales (Cid et al., 1992)
