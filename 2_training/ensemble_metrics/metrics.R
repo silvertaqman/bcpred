@@ -3,16 +3,14 @@ library(tidyverse)
 library(pilot)
 library(readr)
 library(knitr)
-library(cowplot)
 library(patchwork)
-library(ggpubr)
 #############
 # Set general theme
 #############
 theme_set(
 	theme(
 		  # Use gray text for the region names
-		  axis.text.x = element_text(angle=90,color = "gray12", size = 12),
+		  axis.text.x = element_text(color = "gray12", size = 12),
 		  axis.text.y = element_text(color = "gray12", size = 12),
 		  # Set default color and font family for the text
 		  text = element_text(color = "gray12"),
@@ -29,32 +27,32 @@ theme_set(
 # barplot for model selection
 ##################################################################################
 datos <- read_csv("../validation_metrics.csv")
-barmetrix <- function(x){
-	bam <- x %>%
-		select(!ends_with("_time"), !...1) %>%
-		pivot_longer(
-			cols=starts_with("test_"), 
-			names_to="Test", 
-			values_to="Metric") %>%
-		mutate_if(is.character, as.factor) %>%
-		group_by(Test, model) %>%
-		summarize(across(Metric, mean)) %>%
-		arrange(desc(Metric))
-		
-	order <- bam %>%
-		group_by(model) %>%
-		summarize(across(Metric,sum)) %>%
-		arrange(Metric)
-		
-		bam <- ggplot(bam, aes(x=model, y=Metric, fill=Test))+
-			geom_bar(stat="identity")+
-			coord_flip()+
-			ylab("Metrics")+
-  	scale_fill_pilot()+
-  	geom_hline(aes(yintercept=0),colour="red",size=1.5)+
-  	scale_x_discrete(limits = order$model)
-	return(bam)
-}
+#barmetrix <- function(x){
+#	bam <- x %>%
+#		select(!ends_with("_time"), !...1) %>%
+#		pivot_longer(
+#			cols=starts_with("test_"), 
+#			names_to="Test", 
+#			values_to="Metric") %>%
+#		mutate_if(is.character, as.factor) %>%
+#		group_by(Test, model) %>%
+#		summarize(across(Metric, mean)) %>%
+#		arrange(desc(Metric))
+#		
+#	order <- bam %>%
+#		group_by(model) %>%
+#		summarize(across(Metric,sum)) %>%
+#		arrange(Metric)
+#		
+#		bam <- ggplot(bam, aes(x=model, y=Metric, fill=Test))+
+#			geom_bar(stat="identity")+
+#			coord_flip()+
+#			ylab("Metrics")+
+#  	scale_fill_pilot()+
+#  	geom_hline(aes(yintercept=0),colour="red",size=1.5)+
+#  	scale_x_discrete(limits = order$model)
+#	return(bam)
+#}
 
 #ggsave("Metrics.png",barmetrix(datos),dpi=320,width = 2000, height = 1500,bg = "white", units = "px")
 ##################################################################################
@@ -68,14 +66,18 @@ boxmetrix <- function(x){
 			names_to="Test", 
 			values_to="Metric") %>%
 		mutate_if(is.character, as.factor) %>%
-		ggplot(aes(x=model, y=Metric, fill=factor(method)))+
+		mutate(Test = str_remove(Test, "validation_")) %>%
+		filter(Test != "neg_log_loss") %>%
+		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
 				geom_boxplot()+
 #				geom_hline(yintercept=0.94)+
-		facet_wrap(~Test, scales="free_y")+
-		scale_fill_pilot()+labs(fill = 'Method')
+#		facet_wrap(~Test, scales="free_y")+
+		scale_fill_pilot()+
+		labs(fill = 'Algorithm')+
+		coord_flip()
 }
 
-#ggsave("Metrics.png",boxmetrix(datos),dpi=320,width = 4000, height = 2000,bg = "white", units = "px")
+ggsave("Metrics.png",boxmetrix(datos),dpi=320,width = 3000, height = 4000,bg = "white", units = "px")
 #############################33
 # ROC-Curve
 ###############################
@@ -105,7 +107,7 @@ pred <- read_csv("../predictions.csv") %>%
 		labs(color="Model: (AUC)")
 
 # all merged
-all <- ((pred+barmetrix(datos))/boxmetrix(datos))+
-	plot_layout(guides = 'collect')+
-	plot_annotation(tag_levels="A")
-ggsave("all.png",all,dpi=320, width = 5500, height = 4000,bg = "white", units = "px")
+#all <- ((pred+barmetrix(datos))/boxmetrix(datos))+
+#	plot_layout(guides = 'collect')+
+#	plot_annotation(tag_levels="A")
+#ggsave("all.png",all,dpi=320, width = 5500, height = 4000,bg = "white", units = "px")
