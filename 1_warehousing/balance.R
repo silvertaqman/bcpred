@@ -4,15 +4,15 @@ library(ggpubr)
 library(purrr)
 library(pilot)
 library(tidyverse)
-library(e1071)
+#library(e1071)
 library(pilot)
 library(knitr)
 library(grid)
 library(cowplot)
-library(igraph)
-library(ggraph)
-library(ggdendro)
-library(dendextend)
+#library(igraph)
+#library(ggraph)
+#library(ggdendro)
+#library(dendextend)
 library(patchwork)
 #####################################################################
 theme_set(
@@ -43,56 +43,43 @@ mix <- read_csv("./Mix_BC.csv.gz")[,-c(1,2,8743)] %>%
 		!V2,
 		names_to = "aminoacidseq",
 		values_to = "frequence") %>%
-## transform to factor
-	filter(frequence > 0 & frequence< 1) %>%
-	mutate(Class = V2) %>%
+	rename(Class = V2) %>%
 	mutate(
-		group = rep('Original', 408073),
-		property = pmap(
-			., 
+		group = rep('Original', 3286240),
+		property = pmap(., 
 			~ifelse(
-				nchar(..2) <= 3, # only frequences have this kind of names
-				'Composición',
-				'Atributo')
-				) %>% 
-				unlist
-			) %>% 
-	select(group,property, frequence, Class) 
+				nchar(..2) > 3, # only frequences have this kind of names
+				'Atributo',
+				'Composición')) %>% 
+				unlist) %>% 
+	select(group,property, Class) 
 
 mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 	pivot_longer(
 		!Class,
 		names_to = "aminoacidseq",
 		values_to = "frequence") %>%
-## transform to factor
-	filter(frequence > 0 & frequence< 1) %>%
 	mutate(
-		group = rep('Balanceado', 13298),
+		group = rep('Balanceado', 139800),
 		property = pmap(
 			.,
-			~ifelse(
-				nchar(..2) <= 3,
-				'Composición',
-				'Atributo')
-				) %>%
-				unlist
-			) %>%
-	select(group,property, frequence, Class)
+			~ifelse(nchar(..2) <= 3,'Composición','Atributo')) %>%
+				unlist) %>%
+	select(group,property, Class)
 
 # Merge datasets
 
 mix <- mix %>%
-	bind_rows(mixbal) %>%
-	mutate(across(!frequence, factor))
+	bind_rows(mixbal)
+	mutate(
+		Class = factor(Class, labels= c("Control","Paciente")))
 rm(mixbal)
-
-levels(mix$Class) <- c("Control","Paciente")
-mix$group <- relevel(mix$group, ref="Original")
 
 # Data barplot (before)
 
 warehouse <- mix %>%
 	count(group, property, Class) %>%
+	mutate(group = factor(group, levels = c("Original","Balanceado"))) %>%
 	ggplot(aes(x=Class,
 		y=n,
 		fill = property))+
@@ -104,7 +91,8 @@ warehouse <- mix %>%
   	colour = "white",
   	fontface = "bold")+
   	labs(x="Estado",y="Frecuencia",legend="Tipo de Variable")+
-  	scale_fill_pilot()
+  	scale_fill_pilot()+
+  	scale_y_sqrt()
 
 # Merge two plots
 ggsave("balance.png", 
