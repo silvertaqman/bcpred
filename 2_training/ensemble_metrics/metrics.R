@@ -77,7 +77,17 @@ boxmetrix <- function(x){
 		coord_flip()
 }
 
-ggsave("Metrics.png",boxmetrix(datos),dpi=320,width = 3000, height = 4000,bg = "white", units = "px")
+datos <- mutate_if(datos, is.character, as.factor)
+levels(datos$model) <- c("M12","M11","M10","M8","M9","M7","REMOVE","M1","M3","REMOVE","REMOVE","M2","M4","M5","M6","REMOVE")
+
+datos <- datos  %>% 
+	filter(model != "REMOVE") %>% 
+	ungroup()
+
+datos %>%
+	boxmetrix()
+
+ggsave("Metrics.png",boxmetrix(datos),dpi=300,width = 2000, height = 2000,bg = "white", units = "px")
 #############################33
 # ROC-Curve
 ###############################
