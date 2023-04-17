@@ -66,13 +66,15 @@ boxmetrix <- function(x){
 			names_to="Test", 
 			values_to="Metric") %>%
 		mutate_if(is.character, as.factor) %>%
-		mutate(Test = str_remove(Test, "validation_")) %>%
+		mutate(
+			Test = str_remove(Test, "validation_"),
+			model = factor(model, levels = paste0("M",1:12))) %>%
 		filter(Test != "neg_log_loss") %>%
 		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
 				geom_boxplot()+
-#				geom_hline(yintercept=0.94)+
-#		facet_wrap(~Test, scales="free_y")+
+		facet_wrap(~model)+
 		scale_fill_pilot()+
+		theme(legend.position="none")+
 		labs(fill = 'Algorithm')+
 		coord_flip()
 }
@@ -84,11 +86,10 @@ datos <- datos  %>%
 	filter(model != "REMOVE") %>% 
 	ungroup()
 
-datos %>%
-	boxmetrix()
+ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg = "white", units = "px")
 
-ggsave("Metrics.png",boxmetrix(datos),dpi=300,width = 2000, height = 2000,bg = "white", units = "px")
-#############################33
+
+###############################
 # ROC-Curve
 ###############################
 library(plotROC)
