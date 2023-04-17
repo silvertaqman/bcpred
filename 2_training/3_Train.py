@@ -336,14 +336,14 @@ estimators = [("svm", svmrbf),("mlp",mlp)]
 stack_1 = StackingClassifier(
 	estimators = estimators,
 	final_estimator = lr).fit(X, y)
-estimators = [("hte", hte),("baglr", baglr)]
+estimators = [("svm", svmrbf)]
 stack_2 = StackingClassifier(
 	estimators = estimators,
-	final_estimator = adalr).fit(X, y)
-estimators = [("bagmlp", bagmlp),("soft_ensemble", soft_ensemble)]
+	final_estimator = lr).fit(X, y)
+estimators = [("mlp", mlp)]
 stack_3 = StackingClassifier(
 	estimators = estimators,
-	final_estimator = adalr).fit(X, y)
+	final_estimator = lr).fit(X, y)
 
 joblib.dump(stack_1, "./models/stacking_1.pkl")
 joblib.dump(stack_2, "./models/stacking_2.pkl")
