@@ -5,7 +5,6 @@
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy
 import IPython
 import sklearn
@@ -269,7 +268,7 @@ bosmodels = [adarbf, adalr, adadtc]
 # Mixing models
 # Voting Ensembles:
 ###################################################################
-# Max/Hard Voting
+# Majority/Hard Voting
 from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 estimators = [
@@ -290,41 +289,14 @@ joblib.dump(hard_ensemble,"./models/hard_ensemble.pkl")
 soft_ensemble = VotingClassifier(estimators, voting='soft').fit(X,y)
 joblib.dump(soft_ensemble,"./models/soft_ensemble.pkl")
 
-# Hyperparameter Tuning Ensembles Over MLP (params from previous gs)
-from sklearn.neural_network import MLPClassifier
-mlp_1 = MLPClassifier(
-	activation="logistic",
-	alpha=0.0001,
-	hidden_layer_sizes=(100,100),
-	learning_rate_init=0.025118864315095808,
-	max_iter=5000,
-	random_state=74,
-	shuffle=False,
-	solver="adam")
-mlp_2 = MLPClassifier(
-	activation="logistic",
-	alpha=0.0001,
-	hidden_layer_sizes=(60, 60),
-	learning_rate_init=0.039810717055349734,
-	max_iter=5000,
-	random_state=74,
-	shuffle=False,
-	solver="adam")
-mlp_3 = MLPClassifier(
-	activation="logistic",
-	alpha=0.0001,
-	hidden_layer_sizes=(40, 40),
-	learning_rate_init=0.06309573444801933,
-	max_iter=5000,
-	random_state=74,
-	shuffle=False,
-	solver="adam")
-estimators = [('mlp_1', mlp_1), ('mlp_2', mlp_2), ('mlp_3', mlp_3)]
-hte = VotingClassifier(estimators, voting='soft').fit(X,y)
-hte.score(Xt,yt)
-joblib.dump(hte,"./ensemble_models/hte.pkl")
+# Weighted Voting
 
-votmodels = [hard_ensemble, soft_ensemble, hte]
+scores = [0.8936, 0.8936, 0.8723] # accuracies over weak learners
+
+weight_ensemble = VotingClassifier(estimators=estimators, voting='soft', weights=scores).fit(X,y)
+joblib.dump(weight_ensemble,"./models/weight_ensemble.pkl")
+
+votmodels = [hard_ensemble, soft_ensemble, weight]
 
 ###################################################################
 # Stacking: train multiple models hierarchically
