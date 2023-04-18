@@ -61,14 +61,14 @@ adalr = joblib.load("./models/adalr.pkl.gz")
 adadtc = joblib.load("./models/adadtc.pkl.gz")
 hard_ensemble = joblib.load("./models/hard_ensemble.pkl.gz")
 soft_ensemble = joblib.load("./models/soft_ensemble.pkl.gz")
-hte = joblib.load("./models/hte.pkl.gz")
+weight_ensemble = joblib.load("./models/weight_ensemble.pkl.gz")
 stack_1 = joblib.load("./models/stacking_1.pkl.gz")
 stack_2 = joblib.load("./models/stacking_2.pkl.gz")
 stack_3 = joblib.load("./models/stacking_3.pkl.gz")
 models = [firstmlp, svmrbf, lr, mlp]
 bagmodels = [bagrbf, baglr, bagmlp]
 bosmodels = [adarbf, adalr, adadtc]
-votmodels = [hard_ensemble, soft_ensemble, hte]
+votmodels = [hard_ensemble, soft_ensemble, weight_ensemble]
 stacks = [stack_1, stack_2, stack_3]
 
 # Prediction for ROC curves
@@ -89,7 +89,7 @@ yp["adadtc"]=adadtc.decision_function(Xt)
 
 yp["hard_ensemble"]=hard_ensemble.decision_function(platt)
 yp["soft_ensemble"]=np.array(pd.DataFrame(soft_ensemble.predict_proba(Xt))[1])
-yp["hte"]=np.array(pd.DataFrame(hte.predict_proba(Xt))[1])
+yp["weight_ensemble"]=np.array(pd.DataFrame(weight_ensemble.predict_proba(Xt))[1])
 yp["stack_1"]=stack_1.decision_function(Xt)
 yp["stack_2"]=stack_2.decision_function(Xt)
 yp["stack_3"]=stack_3.decision_function(Xt)
@@ -112,7 +112,7 @@ metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 # Exporting metrics to csv
 metrics = pd.concat(map(pd.DataFrame, (metrics[i] for i in range(len(metrics)))))
 metrics['folds'] = 32*['fold'+str(i+1) for i in range(10)]
-modelsname = ['firstmlp','svmrbf','lr', 'mlp', 'bagrbf','baglr','bagmlp','adarbf','adalr','adadtc', 'hard_ensemble','soft_ensemble','hte','stack_1','stack_2','stack_3']
+modelsname = ['firstmlp','svmrbf','lr', 'mlp', 'bagrbf','baglr','bagmlp','adarbf','adalr','adadtc', 'hard_ensemble','soft_ensemble','weight_ensemble','stack_1','stack_2','stack_3']
 metrics['model'] = np.append(np.repeat(modelsname, 10),np.repeat(modelsname, 10))
 metrics['method'] = np.repeat(['kfold','stratified'],160)
 metrics.to_csv('./validation_metrics.csv')
@@ -132,15 +132,15 @@ size_adalr, score_adalr, tscore_adalr, ft_adalr,_ = learning_curve(adalr, X, y, 
 size_adadtc, score_adadtc, tscore_adadtc, ft_adadtc,_ = learning_curve(adadtc, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_hard, score_hard, tscore_hard, ft_hard,_ = learning_curve(hard_ensemble, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_soft, score_soft, tscore_soft, ft_soft,_ = learning_curve(soft_ensemble, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
-size_hte, score_hte, tscore_hte, ft_hte,_ = learning_curve(hte, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
+size_weight_ensemble, score_weight_ensemble, tscore_weight_ensemble, ft_weight_ensemble,_ = learning_curve(weight_ensemble, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_stack1, score_stack1, tscore_stack1, ft_stack1,_ = learning_curve(stack_1, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_stack2, score_stack2, tscore_stack2, ft_stack2,_ = learning_curve(stack_2, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 size_stack3, score_stack3, tscore_stack3, ft_stack3,_ = learning_curve(stack_3, X, y, cv=10, train_sizes=np.linspace(0.1, 1.0, 10),return_times=True)
 
 metrics = pd.DataFrame()
-metrics['train_size'] = np.concatenate((size_fmlp, size_svm, size_lr, size_mlp, size_bagsvm, size_baglr, size_bagmlp, size_adasvm, size_adalr, size_adadtc, size_hard, size_soft, size_hte, size_stack1, size_stack2, size_stack3 ))
+metrics['train_size'] = np.concatenate((size_fmlp, size_svm, size_lr, size_mlp, size_bagsvm, size_baglr, size_bagmlp, size_adasvm, size_adalr, size_adadtc, size_hard, size_soft, size_weight_ensemble, size_stack1, size_stack2, size_stack3 ))
 metrics['models'] = np.repeat(modelsname, 10)
-metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_fmlp, score_svm, score_lr, score_mlp, score_bagsvm, score_baglr, score_bagmlp, score_adasvm, score_adalr, score_adadtc, score_hard, score_soft, score_hte, score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_fmlp, tscore_svm, tscore_lr, tscore_mlp, tscore_bagsvm, tscore_baglr, tscore_bagmlp, tscore_adasvm, tscore_adalr, tscore_adadtc, tscore_hard, tscore_soft, tscore_hte, tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_fmlp, ft_svm, ft_lr, ft_mlp, ft_bagsvm, ft_baglr, ft_bagmlp, ft_adasvm, ft_adalr, ft_adadtc, ft_hard, ft_soft, ft_hte, ft_stack1, ft_stack2, ft_stack3]))],axis=1)
+metrics = pd.concat([metrics,pd.DataFrame(np.concatenate([score_fmlp, score_svm, score_lr, score_mlp, score_bagsvm, score_baglr, score_bagmlp, score_adasvm, score_adalr, score_adadtc, score_hard, score_soft, score_weight_ensemble, score_stack1, score_stack2, score_stack3])), pd.DataFrame(np.concatenate([tscore_fmlp, tscore_svm, tscore_lr, tscore_mlp, tscore_bagsvm, tscore_baglr, tscore_bagmlp, tscore_adasvm, tscore_adalr, tscore_adadtc, tscore_hard, tscore_soft, tscore_weight_ensemble, tscore_stack1, tscore_stack2, tscore_stack3])),pd.DataFrame(np.concatenate([ft_fmlp, ft_svm, ft_lr, ft_mlp, ft_bagsvm, ft_baglr, ft_bagmlp, ft_adasvm, ft_adalr, ft_adadtc, ft_hard, ft_soft, ft_weight_ensemble, ft_stack1, ft_stack2, ft_stack3]))],axis=1)
 metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in range(1,11)]+['validation_scores_fold_%d'% x for x in range(1,11)]+['fit_times_fold_%d'% x for x in range(1,11)]
 ############################################################
 # Tabla comparativa para ver cual es mejor
@@ -151,9 +151,3 @@ metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in ra
 # revisar la funcion de activacion (relu, tanh, etc)
 ############################################################
 metrics.to_csv('./learning_curve.csv')
-'''
-# Export data for overfit validation curve
-from sklearn.model_selection import validation_curve
-param_range = np.logspace(-3,-1,11)
-train_scores, valid_scores = validation_curve(svmrbf, Xv, yv,param_name="gamma", param_range=param_range, cv=10)
-'''
