@@ -5,11 +5,7 @@
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import scipy
-import IPython
 import sklearn
-import mglearn
 import joblib
 import itertools
 # Gridsearch runned on HPC-Cedia cluster. Hyperparameters setted to maximize accuracy and recall responses. 
@@ -37,6 +33,11 @@ Xv, Xt, yv, yt = tts(
 	test_size=0.4) #70:20:10 # testratio/(testratio+validationratio)
 #######################################################################
 #Arrange for hard voting
+# load previous models (16 models)
+firstmlp = joblib.load("./models/firstmlp.pkl.gz")
+svmrbf = joblib.load("./models/bc_svmrbf.pkl.gz")
+lr = joblib.load("./models/bc_lr.pkl.gz")
+mlp = joblib.load("./models/bc_mlp.pkl.gz")
 # Max/Hard Voting
 from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
@@ -48,11 +49,6 @@ hard_ensemble = VotingClassifier(
 	estimators,
 	voting='hard').fit(X,y)
 platt = pd.DataFrame(hard_ensemble.predict(Xt))
-# load previous models (16 models)
-firstmlp = joblib.load("./models/firstmlp.pkl.gz")
-svmrbf = joblib.load("./models/bc_svmrbf.pkl.gz")
-lr = joblib.load("./models/bc_lr.pkl.gz")
-mlp = joblib.load("./models/bc_mlp.pkl.gz")
 bagrbf = joblib.load("./models/bagrbf.pkl.gz")
 baglr = joblib.load("./models/baglr.pkl.gz")
 bagmlp = joblib.load("./models/bagmlp.pkl.gz")
@@ -77,7 +73,7 @@ models = models+bagmodels+bosmodels+votmodels+stacks
 yp = pd.DataFrame()
 yp["Reality"]=yt
 yp["firstmlp"]=np.array(pd.DataFrame(firstmlp.predict_proba(Xt))[1])
-yp["svmrbf"]=svmrbf.decision_function(Xt)
+yp["svmrbf"]=svmrbf.fit(X,y).decision_function(Xt)
 yp["lr"]=lr.decision_function(Xt)
 yp["mlp"]=np.array(pd.DataFrame(mlp.predict_proba(Xt))[1])
 yp["bagrbf"]=bagrbf.decision_function(Xt)
@@ -106,7 +102,7 @@ kfv = [cv(p, Xv, yv, cv=10, scoring= scoring, n_jobs=-1) for p in models]
 # K-stratified Validation
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=10,shuffle=True,random_state=74)
-ksfv = [cv(p, Xv, yv, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
+ksfv = [cv(p, Xv,yv, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
 metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 
 # Exporting metrics to csv

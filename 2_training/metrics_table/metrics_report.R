@@ -6,6 +6,7 @@ library(knitr)
 library(ggplot2)
 library(gt)
 library(stringr)
+library(pilot)
 
 # Generates a table for summarise statistics
 # read_csv("../validation_curve.csv") %>%
@@ -38,16 +39,16 @@ medias <- read_csv("../validation_metrics.csv") %>%
 	select(-...1, -fit_time, -score_time) %>%
 	group_by(model,method) %>%
 	summarise(across(!folds, mean))%>%
-	pivot_longer(starts_with("validation_"), names_to="Metric", values_to="media") %>%
-	mutate(Metric = str_remove(Metric, "validation_")) %>%
+	pivot_longer(starts_with("test_"), names_to="Metric", values_to="media") %>%
+	mutate(Metric = str_remove(Metric, "test_")) %>%
 	mutate(model = factor(model))
 
 sds <- read_csv("../validation_metrics.csv") %>%
 	select(-...1, -fit_time, -score_time) %>%
 	group_by(model,method) %>%
 	summarise(across(!folds, sd))%>%
-	pivot_longer(starts_with("validation_"), names_to="Metric", values_to="sd") %>%
-	mutate(Metric = str_remove(Metric, "validation_")) %>%
+	pivot_longer(starts_with("test_"), names_to="Metric", values_to="sd") %>%
+	mutate(Metric = str_remove(Metric, "test_")) %>%
 	mutate(model = factor(model))
 
 lims <- medias %>%
