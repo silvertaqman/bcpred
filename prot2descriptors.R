@@ -5,11 +5,13 @@ library(Rcpi)
 library(readr)
 library(dplyr)
 library(tidyr)
+args <- commandArgs(TRUE)
 # Return all descriptors for a certain sequence
+
 extractor <- function(x) c(extractProtAAC(x),extractProtDC(x),extractProtTC(x),extractProtAPAAC(x),extractProtMoreauBroto(x))
 
 # load input sequences
-df <- readFASTA("input.fasta") |>
+df <- readFASTA(args[1]) |>
 	as_tibble() |>
 	pivot_longer(everything(), names_to="Protein", values_to="Sequence")
 
@@ -23,4 +25,4 @@ descriptors <- as_tibble(descriptors)
 # export to csv (with names)
 df |>
 	bind_cols(descriptors)|>
-	write_csv("descriptors.csv")
+	write_csv(args[2])

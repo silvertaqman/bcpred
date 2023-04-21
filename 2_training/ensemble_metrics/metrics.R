@@ -62,12 +62,11 @@ boxmetrix <- function(x){
 	x %>%
 		select(!(ends_with("_time")|...1)) %>%
 		pivot_longer(
-			cols=starts_with("validation_"), 
+			cols=starts_with("test_"), 
 			names_to="Test", 
 			values_to="Metric") %>%
-		mutate_if(is.character, as.factor) %>%
 		mutate(
-			Test = str_remove(Test, "validation_"),
+			Test = str_remove(Test, "test_"),
 			model = factor(model, levels = paste0("M",1:12))) %>%
 		filter(Test != "neg_log_loss") %>%
 		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
@@ -87,7 +86,6 @@ datos <- datos  %>%
 	ungroup()
 
 ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg = "white", units = "px")
-
 
 ###############################
 # ROC-Curve
@@ -121,4 +119,4 @@ pred <- read_csv("../predictions.csv") %>%
 #all <- ((pred+barmetrix(datos))/boxmetrix(datos))+
 #	plot_layout(guides = 'collect')+
 #	plot_annotation(tag_levels="A")
-#ggsave("all.png",all,dpi=320, width = 5500, height = 4000,bg = "white", units = "px")
+ggsave("roc_auc.png", pred, dpi=300, width = 3000, height = 2000,bg = "white", units = "px")
