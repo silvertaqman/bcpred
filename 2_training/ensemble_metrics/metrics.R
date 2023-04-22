@@ -94,7 +94,8 @@ library(plotROC)
 
 # Generates a ROC curve with ggplot
 pred <- read_csv("../predictions.csv") %>%
-	select(!...1) %>%
+	select(!c(...1, firstmlp, mlp, svmrbf, lr)) %>%
+	rename(M7=bagrbf, M8=baglr, M9=bagmlp, M10=adarbf, M11=adalr, M12=adadtc, M1=hard_ensemble, M2=soft_ensemble, M3=weight_ensemble, M4=stack_1, M5=stack_2, M6=stack_3) %>%
 	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
 	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
 		geom_roc(n.cuts=20,labels=FALSE)+
@@ -105,7 +106,8 @@ pred <- read_csv("../predictions.csv") %>%
 positions<-arrange(calc_auc(pred),desc(AUC))
 positions$AUC <- round(positions$AUC, 3)
 pred <- read_csv("../predictions.csv") %>%
-	select(!...1) %>%
+	select(!c(...1, firstmlp, mlp, svmrbf, lr)) %>%
+	rename(M7=bagrbf, M8=baglr, M9=bagmlp, M10=adarbf, M11=adalr, M12=adadtc, M1=hard_ensemble, M2=soft_ensemble, M3=weight_ensemble, M4=stack_1, M5=stack_2, M6=stack_3) %>%
 	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
 	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
 		geom_roc(n.cuts=20,labels=FALSE)+
@@ -114,9 +116,10 @@ pred <- read_csv("../predictions.csv") %>%
 			breaks=positions$Model, 
 			labels = paste0(positions$Model,': (',positions$AUC,')'))+
 		labs(color="Model: (AUC)")
+		
 
 # all merged
 #all <- ((pred+barmetrix(datos))/boxmetrix(datos))+
 #	plot_layout(guides = 'collect')+
 #	plot_annotation(tag_levels="A")
-ggsave("roc_auc.png", pred, dpi=300, width = 3000, height = 2000,bg = "white", units = "px")
+ggsave("roc_auc.png", pred, dpi=300, width = 3000, height = 2100,bg = "white", units = "px")
