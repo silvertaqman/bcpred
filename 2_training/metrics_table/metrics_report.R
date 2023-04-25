@@ -51,16 +51,6 @@ sds <- read_csv("../validation_metrics.csv") %>%
 	mutate(Metric = str_remove(Metric, "test_")) %>%
 	mutate(model = factor(model))
 
-lims <- medias %>%
-	inner_join(sds) %>%
-	mutate(maximo = media + sd, minimo = media - sd) %>%
-	filter(model %in% c("M4", "M9"))%>% #, media > 0.975
-	arrange(minimo, decrease=TRUE)
-
-p <- ggplot(lims, aes(model, media, fill = Metric))+
-	facet_grid(Metric~method, scales="free_y")
-p + geom_errorbar(aes(ymin = minimo, ymax = maximo), width = 0.2)
-
 # Heatmap for metrics
 lims <- medias %>%
 	inner_join(sds) %>%
