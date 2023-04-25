@@ -97,12 +97,12 @@ yp.to_csv("./predictions.csv")
 from sklearn.model_selection import cross_validate as cv
 from sklearn.metrics import make_scorer, accuracy_score, roc_auc_score, recall_score, f1_score, log_loss, precision_score
 scoring = ['accuracy','recall','precision','roc_auc','f1','neg_log_loss']
-kfv = [cv(p, Xv, yv, cv=10, scoring= scoring, n_jobs=-1) for p in models]
+kfv = [cv(p, bc_input, bc_output, cv=10, scoring= scoring, n_jobs=-1) for p in models]
 
 # K-stratified Validation
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=10,shuffle=True,random_state=74)
-ksfv = [cv(p, Xv,yv, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
+ksfv = [cv(p, bc_input, bc_output, cv=kfold, scoring= scoring, n_jobs=-1) for p in models]
 metrics = list(itertools.chain.from_iterable(zip(kfv, ksfv)))
 
 # Exporting metrics to csv
