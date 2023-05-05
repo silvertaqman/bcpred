@@ -14,12 +14,12 @@ import itertools
 # Gridsearch runned on HPC-Cedia cluster. Hyperparameters setted to maximize accuracy and recall responses. 
 
 # Load data
-bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
-bc_input = bc.iloc[0:466, 0:300]
+bc = pd.read_csv("../1_warehousing/Mix_BreastCancer_srbal.csv.gz")
+bc_input = bc.iloc[0:466, 0:356]
 bc_output = bc['Class']
 
 # Metrics (Every model)
-from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, mean_squared_error, f1_score
+from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, precision_score, f1_score
 
 # Data partition (mathematical notation) at 75:15:10
 from sklearn.model_selection import train_test_split as tts
@@ -43,10 +43,6 @@ with open("Selected_Features.txt","w") as f:
 
 # Training and Tuning models
 
-# Original model descripted
-firstmlp = MLPClassifier().fit(X,y)
-joblib.dump(firstmlp,"./models/firstmlp.pkl")
-
 # RBF
 # 1) gamma from 0.01 to 1 y C from 1 to 100 becomes 0.9484
 param_grid = {
@@ -62,9 +58,10 @@ gs_svmrbf = GridSearchCV(
 	n_jobs=-1,
 	cv=10).fit(X,y) # lot of time
 # training with best parameters
-joblib.dump(gs_svmrbf, "./gridsearch/gs_svmrbf.pkl")
+joblib.dump(gs_svmrbf, "../gridsearch/gs_svmrbf.pkl")
 svmrbf = SVC(**gs_svmrbf.best_params_,probability=True).fit(X,y)
-joblib.dump(svmrbf, "./models/bc_svmrbf.pkl")
+svmrbf = CalibratedClassifierCV(svmrbf).fit(X,y
+joblib.dump(svmrbf, "../models/bc_svmrbf.pkl")
 
 # Logistic regression
 # 2) generates an accuracy of 0.91 with C: 3, gamma= 0.8

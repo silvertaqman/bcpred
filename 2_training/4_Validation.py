@@ -42,7 +42,7 @@ mlp = joblib.load("./models/bc_mlp.pkl.gz")
 from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 estimators = [
-	('radial',CalibratedClassifierCV(svmrbf).fit(X,y)),
+	('radial',svmrbf),
 	('logistic',lr),
 	('multi',mlp)]
 hard_ensemble = VotingClassifier(
