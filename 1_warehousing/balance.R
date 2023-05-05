@@ -70,7 +70,7 @@ mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 # Merge datasets
 
 mix <- mix %>%
-	bind_rows(mixbal)
+	bind_rows(mixbal) %>%
 	mutate(
 		Class = factor(Class, labels= c("Control","Paciente")))
 rm(mixbal)

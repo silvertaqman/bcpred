@@ -32,7 +32,7 @@ F = list(X.columns)
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, SelectFromModel, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, chi2, f_classif, mutual_info_classif
 ## Remove invariant columns 
 selector= VarianceThreshold()
-X = selector.fit_transform(X.values)
+Xs = selector.fit_transform(X.values)
 
 ### export invariant features
 FS = []
@@ -53,7 +53,7 @@ from sklearn.linear_model import ElasticNetCV
 # Compare methods: kbest, percentile, False positive rate, false discovery rate, family wise, ridgeCV and Tree Model based
 from sklearn.ensemble import ExtraTreesClassifier
 selector = {
-	'kbest_chi2': SelectKBest(chi2, k=300),
+	'kbest_chi2': SelectKBest(chi2, k=356),
 	'kbest_f':SelectKBest(f_classif), 
 	'kbest_mutual':SelectKBest(mutual_info_classif),
 	'perc_chi2':SelectPercentile(chi2, percentile=3),
@@ -73,19 +73,19 @@ selector = {
 # RidgeCV
 clf = RidgeCV(alphas=np.logspace(-5,5,10)).fit(X,y)
 importance = np.abs(clf.coef_)
-threshold = np.sort(importance)[-300] + 0.01
+threshold = np.sort(importance)[-356] + 0.01
 ridge = SelectFromModel(clf, threshold=threshold).fit(X, y)
 
 # LassoCV
 clf = LassoCV(alphas=np.logspace(-5,5,100)).fit(X,y)
 importance = np.abs(clf.coef_)
-threshold = np.sort(importance)[-300] + 0.01
+threshold = np.sort(importance)[-356] + 0.01
 lasso = SelectFromModel(clf, threshold=threshold).fit(X, y)
 
 # ElasticNetCV
 clf = ElasticNetCV(l1_ratio = [0.05, 0.1, 0.5, 0.9, 0.95],alphas=np.logspace(-5,5,200), cv=10).fit(X,y)
 importance = np.abs(clf.coef_)
-threshold = np.sort(importance)[-300] + 0.01
+threshold = np.sort(importance)[-356] + 0.01
 elasticnet = SelectFromModel(clf, threshold=threshold).fit(X, y)
 
 # Final comparison
@@ -110,17 +110,16 @@ metrics.to_csv("selection.csv")
 # Compare sel features trough dendrograms/heatmap (graphic)
 
 # Using kbest Chi2
-selector = SelectKBest(chi2, k=300)
-X = selector.fit_transform(X, y)
+selector = SelectKBest(chi2, k=356)
+Xs = selector.fit_transform(Xs, y)
+feat = selector.get_support(indices=True)
 
 ## Create and export the working dataframe: scaled and reduced
-cancer_sr = pd.DataFrame(Xs, columns=FS)
+cancer_sr = X.iloc[:,feat]
 cancer_sr['Class'] = y
 cancer_sr.to_csv("./Mix_BC_sr.csv", index=False)
 '''
-## Principal Component Analysis (from 8708 to 332 to explain 0.97 of variance)
+## Principal Component Analysis (from 8708 to 356 to explain 0.99 of variance)
 from sklearn.decomposition import PCA
-pcaModel = PCA(0.97)
-## Export IDs and Class
-bc[["ProtID", "Class"]].to_csv("./ProtIDs.csv")
+pca = PCA(0.99).fit(X)
 '''

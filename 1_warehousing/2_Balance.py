@@ -14,7 +14,7 @@ Features = list(X.columns)
 
 # SMOTE
 from imblearn.over_sampling import SMOTE
-smote = SMOTE(random_state=123)
+smote = SMOTE(random_state=74)
 Xs, ys = smote.fit_resample(X.values, y)
     
 # Export smoted, balanced data
