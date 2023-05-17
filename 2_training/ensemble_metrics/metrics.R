@@ -26,7 +26,7 @@ theme_set(
 ##################################################################################
 # barplot for model selection
 ##################################################################################
-datos <- read_csv("../validation_metrics.csv")
+datos <- read_csv("../validation_metrics.csv.gz")
 #barmetrix <- function(x){
 #	bam <- x %>%
 #		select(!ends_with("_time"), !...1) %>%
@@ -79,10 +79,9 @@ boxmetrix <- function(x){
 }
 
 datos <- mutate_if(datos, is.character, as.factor)
-levels(datos$model) <- c("M12","M11","M10","M8","M9","M7","REMOVE","M1","M3","REMOVE","REMOVE","M2","M4","M5","M6","REMOVE")
 
 datos <- datos  %>% 
-	filter(model != "REMOVE") %>% 
+	filter(model != c("dtc","mlp", "svmrbf", "lr")) %>% 
 	ungroup()
 
 ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg = "white", units = "px")
@@ -93,9 +92,8 @@ ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg 
 library(plotROC)
 
 # Generates a ROC curve with ggplot
-pred <- read_csv("../predictions.csv") %>%
-	select(!c(...1, firstmlp, mlp, svmrbf, lr)) %>%
-	rename(M7=bagrbf, M8=baglr, M9=bagmlp, M10=adarbf, M11=adalr, M12=adadtc, M1=hard_ensemble, M2=soft_ensemble, M3=weight_ensemble, M4=stack_1, M5=stack_2, M6=stack_3) %>%
+pred <- read_csv("../predictions.csv.gz") %>%
+	select(!c(...1, dtc, mlp, svmrbf, lr)) %>%
 	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
 	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
 		geom_roc(n.cuts=20,labels=FALSE)+
@@ -105,9 +103,8 @@ pred <- read_csv("../predictions.csv") %>%
 # Los metodos STACK1, AdaDTC y AdaSVM tiene los AUC mas altos
 positions<-arrange(calc_auc(pred),desc(AUC))
 positions$AUC <- round(positions$AUC, 3)
-pred <- read_csv("../predictions.csv") %>%
-	select(!c(...1, firstmlp, mlp, svmrbf, lr)) %>%
-	rename(M7=bagrbf, M8=baglr, M9=bagmlp, M10=adarbf, M11=adalr, M12=adadtc, M1=hard_ensemble, M2=soft_ensemble, M3=weight_ensemble, M4=stack_1, M5=stack_2, M6=stack_3) %>%
+pred <- read_csv("../predictions.csv.gz") %>%
+	select(!c(...1, mlp, svmrbf, lr, dtc)) %>%
 	pivot_longer(cols=!Reality, names_to="Model", values_to="Predictions") %>%
 	ggplot(aes(m = Predictions, d = Reality, colour=Model))+
 		geom_roc(n.cuts=20,labels=FALSE)+
