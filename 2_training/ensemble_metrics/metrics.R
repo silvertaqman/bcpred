@@ -10,8 +10,8 @@ library(patchwork)
 theme_set(
 	theme(
 		  # Use gray text for the region names
-		  axis.text.x = element_text(color = "gray12", size = 12),
-		  axis.text.y = element_text(color = "gray12", size = 12),
+		  axis.text.x = element_text(color = "gray12", size = 11),
+		  axis.text.y = element_text(color = "gray12", size = 11),
 		  # Set default color and font family for the text
 		  text = element_text(color = "gray12"),
 		  # Make the background white and remove extra grid lines
@@ -60,29 +60,25 @@ datos <- read_csv("../validation_metrics.csv.gz")
 ##################################################################################
 boxmetrix <- function(x){
 	x %>%
+		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
+			geom_boxplot()+
+			facet_wrap(~model)+
+			scale_fill_pilot()+
+			theme(legend.position="none")+
+			labs(fill = 'Algorithm')+
+			coord_flip()
+}
+
+datos <- mutate_if(datos, is.character, as.factor)%>%
 		select(!(ends_with("_time")|...1)) %>%
 		pivot_longer(
 			cols=starts_with("test_"), 
 			names_to="Test", 
 			values_to="Metric") %>%
-		mutate(
-			Test = str_remove(Test, "test_"),
-			model = factor(model, levels = paste0("M",1:12))) %>%
-		filter(Test != "neg_log_loss") %>%
-		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
-				geom_boxplot()+
-		facet_wrap(~model)+
-		scale_fill_pilot()+
-		theme(legend.position="none")+
-		labs(fill = 'Algorithm')+
-		coord_flip()
-}
+		mutate(Test = factor(str_remove(Test, "test_"))) %>% 
+		filter(!model %in% c("dtc","mlp", "svmrbf", "lr"))  
 
-datos <- mutate_if(datos, is.character, as.factor)
-
-datos <- datos  %>% 
-	filter(model != c("dtc","mlp", "svmrbf", "lr")) %>% 
-	ungroup()
+levels(datos$Test) <- c("ACC","F1","PRE","REC","AUC")
 
 ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg = "white", units = "px")
 

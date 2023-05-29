@@ -7,13 +7,12 @@ import pandas as pd
 import numpy as np
 import scipy
 import sklearn
-import mglearn
 import joblib
 import itertools
 # Gridsearch runned on HPC-cedia cluster. Hyperparameters setted to maximize accuracy and recall responses. 
 # Load data
 bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
-bc_input = bc.iloc[0:466, 0:350]
+bc_input = bc.iloc[0:466, 1:276]
 bc_output = bc['Class']
 
 # Metrics (Every model)
@@ -32,11 +31,6 @@ Xv, Xt, yv, yt = tts(
 	yt,
 	random_state=74,
 	test_size=0.4) #70:20:10 # testratio/(testratio+validationratio)
-
-F = list(X.columns)
-# Selected features
-with open("Selected_Features.txt","w") as f:
-	[f.write("%s\n" % i) for i in F]
 
 ###################################################################
 # Training and Tuning strong models
@@ -57,12 +51,11 @@ gs_svmrbf = GridSearchCV(
 	cv=10).fit(X,y) # lot of time
 # training with best parameters
 joblib.dump(gs_svmrbf, "./gridsearch/gs_svmrbf.pkl")
-# pd.DataFrame(gs_svmrbf.cv_results_).to_csv("./gridsearch/svm.csv")
-svmrbf = SVC(C=2,gamma=0.7,kernel="rbf",probability=True).fit(X,y)
+pd.DataFrame(gs_svmrbf.cv_results_).to_csv("./gridsearch/svm.csv")
+svmrbf = SVC(C=3,gamma=0.06,kernel="rbf",probability=True).fit(X,y)
 joblib.dump(svmrbf, "./models/bc_svmrbf.pkl")
 
 # Logistic regression
-# 2) generates an accuracy of 0.91 with C: 3, gamma= 0.8
 param_grid = {
         'C': np.logspace(-4, 4, 50),
         'penalty': ['none', 'l2'],
@@ -77,8 +70,8 @@ gs_lr = GridSearchCV(
 	n_jobs=-1, 
 	cv=10).fit(X,y)
 joblib.dump(gs_lr, "./gridsearch/gs_lr.pkl")
-# pd.DataFrame(gs_lr.cv_results_).to_csv("./gridsearch/lr.csv")
-lr = LogisticRegression(C=0.00202358964772516,penalty="l2",max_iter=5000,random_state=74,solver="lbfgs").fit(X,y)
+pd.DataFrame(gs_lr.cv_results_).to_csv("./gridsearch/lr.csv")
+lr = LogisticRegression(C=0.268269579527973,penalty="l2",max_iter=5000,random_state=74,solver="lbfgs").fit(X,y)
 joblib.dump(lr, "./models/bc_lr.pkl")
 # Multilayer perceptron
 # 3) 
@@ -86,9 +79,9 @@ hlayer = tuple(np.arange(300,701,100))
 param_grid = {
         'hidden_layer_sizes': [x for x in itertools.product(hlayer, repeat=2)],
         'activation': ['relu'],
-        'solver': ['adam'],
-        'alpha': [0.001,0.01],
-        'learning_rate_init': np.logspace(-3,-1,5),
+        'solver': ['adam','sgd'],
+        'alpha': [0.001,0.01,0.1],
+        'learning_rate_init': np.logspace(-3,-1,3),
         'random_state': [74],
         'max_iter': [5000],
         'shuffle': [False]
@@ -98,10 +91,10 @@ gs_mlp = GridSearchCV(
 	MLPClassifier(), 
 	param_grid, 
 	n_jobs=-1,
-	cv=10).fit(X,y) # weeks for running
+	cv=10).fit(X,y) # weeks for running without HPC
 joblib.dump(gs_mlp, "./gridsearch/gs_mlp.pkl")
-# pd.DataFrame(gs_mlp.cv_results_).to_csv("./gridsearch/mlp.csv")
-mlp = MLPClassifier(hidden_layer_sizes = (700, 600), activation="relu", solver="adam", alpha=0.001, learning_rate_init=0.1, random_state=74, shuffle=False).fit(X,y)
+pd.DataFrame(gs_mlp.cv_results_).to_csv("./gridsearch/mlp.csv")
+mlp = MLPClassifier(hidden_layer_sizes = (400, 700), activation="relu", solver="adam", alpha=0.001, learning_rate_init=0.001, random_state=74, shuffle=False, max_iter=5000).fit(X,y)
 joblib.dump(mlp, "./models/bc_mlp.pkl")
 
 # Decision Tree Classifier
@@ -121,10 +114,11 @@ gs_dtc = GridSearchCV(
 	param_grid_dtc, 
 	n_jobs=-1,
 	cv=10).fit(X,y) 
-joblib.dump(gs_dtc, "./gridsearch/gs_mlp.pkl")
-# pd.DataFrame(gs_dtc.cv_results_).to_csv("./gridsearch/dtc.csv")
-dtc = DecisionTreeClassifier(criterion="gini",max_depth=42,max_features="auto",min_samples_leaf=2,min_samples_split=2,random_state=74,splitter="random").fit(X,y)
+joblib.dump(gs_dtc, "./gridsearch/gs_dtc.pkl")
+pd.DataFrame(gs_dtc.cv_results_).to_csv("./gridsearch/dtc.csv")
+dtc = DecisionTreeClassifier(criterion="gini",max_depth=82,max_features="log2",min_samples_leaf=2,min_samples_split=82,random_state=74,splitter="best").fit(X,y)
 joblib.dump(dtc, "./models/bc_dtc.pkl")
+
 
 # Training and Tuning ensembles for final selection
 ###################################################################
@@ -135,26 +129,50 @@ joblib.dump(dtc, "./models/bc_dtc.pkl")
 # Loading methods
 from sklearn.ensemble import BaggingClassifier
 
-# define the model
-bagrbf = BaggingClassifier(
-	svmrbf, 
-	random_state=74).fit(X,y)
-baglr = BaggingClassifier(
-	lr, 
-	random_state=74).fit(X,y)
-bagmlp = BaggingClassifier(
-	mlp, 
-	random_state=74).fit(X,y)
-bagdtc = BaggingClassifier(
-	dtc, 
-	random_state=74).fit(X,y)
+param_grid = {
+    'max_samples' : [i/100 for i in range(3,50,5)]
+}
 
-# export models
-joblib.dump(bagrbf, "./models/bagrbf.pkl")
+gs_bagsvm = GridSearchCV(
+	BaggingClassifier(svmrbf),
+	param_grid, 
+	n_jobs=-1,
+	cv=10).fit(X,y)
+gs_baglr = GridSearchCV(
+	BaggingClassifier(lr),
+	param_grid, 
+	n_jobs=-1,
+	cv=10).fit(X,y)
+gs_bagmlp = GridSearchCV(
+	BaggingClassifier(mlp),
+	param_grid, 
+	n_jobs=-1,
+	cv=10).fit(X,y)
+gs_bagdtc = GridSearchCV(
+	BaggingClassifier(dtc),
+	param_grid, 
+	n_jobs=-1,
+	cv=10).fit(X,y)
+
+joblib.dump(gs_bagsvm, "./gridsearch/gs_bagsvm.pkl")
+joblib.dump(gs_baglr, "./gridsearch/gs_baglr.pkl")
+joblib.dump(gs_bagmlp, "./gridsearch/gs_bagmlp.pkl")
+joblib.dump(gs_bagdtc, "./gridsearch/gs_bagdtc.pkl")
+
+pd.DataFrame(gs_bagsvm.cv_results_).to_csv("./gridsearch/bagsvm.csv")
+pd.DataFrame(gs_baglr.cv_results_).to_csv("./gridsearch/baglr.csv")
+pd.DataFrame(gs_bagmlp.cv_results_).to_csv("./gridsearch/bagmlp.csv")
+pd.DataFrame(gs_bagdtc.cv_results_).to_csv("./gridsearch/bagdtc.csv")
+
+bagsvm=BaggingClassifier(svmrbf, max_samples=0.43).fit(X,y)
+baglr=BaggingClassifier(lr, max_samples=0.43).fit(X,y)
+bagmlp=BaggingClassifier(mlp, max_samples=0.33).fit(X,y)
+bagdtc=BaggingClassifier(dtc, max_samples=0.48).fit(X,y)
+
+joblib.dump(bagsvm, "./models/bagsvm.pkl")
 joblib.dump(baglr, "./models/baglr.pkl")
 joblib.dump(bagmlp, "./models/bagmlp.pkl")
 joblib.dump(bagdtc, "./models/bagdtc.pkl")
-
 ###################################################################
 # Mixing combinations of predictions
 # Boosting: training over weak classifiers 
@@ -178,35 +196,34 @@ adalr = AdaBoostClassifier(
 	base_estimator=LogisticRegression())
 
 # Ada requires a sample weight implementation
-
 # set parameters
 param_grid_rbf = {
-	'n_estimators': (1,10,25,50,100),                  
-	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
+	'n_estimators': (10, 50),                  
+	'learning_rate': (0.001, 0.01, 0.1),
 	'algorithm':['SAMME'],
-	'base_estimator__C': np.logspace(-3,3,10),
-	'base_estimator__gamma': np.logspace(-4,2,10)}
+	'base_estimator__C': np.logspace(-3,3,5),
+	'base_estimator__gamma': np.logspace(-4,2,5)}
 
 param_grid_lr = {
-	'n_estimators': (1,50,100),                  
-	'learning_rate': (0.0001, 0.001, 0.01, 0.1, 1.0),
+	'n_estimators': (10, 50),                  
+	'learning_rate': (0.001, 0.01, 0.1),
 	'algorithm':['SAMME'],
 	'base_estimator__C': np.logspace(-3,4,5),
 	'base_estimator__penalty': ['l2'],
-	'base_estimator__solver': ['newton-cg', 'lbfgs', 'sag'],
+	'base_estimator__solver': ['sag'],
 	'base_estimator__random_state': [74],
 	'base_estimator__max_iter': [10000]}
 	
 param_grid_dtc = {
-	'n_estimators': (1,50,100),                  
-	'learning_rate': (0.0001, 0.01, 0.1, 1.0),
+	'n_estimators': (10,50),                  
+	'learning_rate': (0.001, 0.01, 0.1),
 	'algorithm':['SAMME'],
-	'base_estimator__criterion': ['gini', 'entropy','log_loss'],
+	'base_estimator__criterion': ['gini', 'entropy'],
 	'base_estimator__splitter': ['best','random'],
-	'base_estimator__max_depth':range(2,100,20), 
-	'base_estimator__min_samples_split':range(2,100,20), 
-	'base_estimator__min_samples_leaf':range(2,100,20), 
-	'base_estimator__max_features':['auto', 'sqrt', 'log2', 'None'], 
+	'base_estimator__max_depth':range(2,100,5), 
+	'base_estimator__min_samples_split':range(2,100,5), 
+	'base_estimator__min_samples_leaf':range(2,100,5), 
+	'base_estimator__max_features':['sqrt', 'log2'], 
 	'base_estimator__random_state':[74]
 }
 
@@ -231,7 +248,7 @@ gs_adadtc = GridSearchCV(
 	cv=10).fit(X,y)
 joblib.dump(gs_adadtc, "./gridsearch/gs_adadtc.pkl")
 
-# Export best metrics for gridsearch (dtc:36000x22 + lr:1200x19 + rbf:2500x17)
+# Export best metrics for gridsearch 
 
 gs = [gs_adarbf, gs_adalr, gs_adadtc]
 
@@ -243,21 +260,21 @@ Features = [list(p.columns) for p in results]
 adarbf = AdaBoostClassifier(
 	SVC(
 		C= 1000,
-		gamma=1),
+		gamma=0.1),
 	algorithm='SAMME',
-	learning_rate=1,
-	n_estimators=50).fit(X,y)
+	learning_rate=0.001,
+	n_estimators=10).fit(X,y)
 	
 adalr=AdaBoostClassifier(
 	LogisticRegression(
-		C=0.0562341325190349,
+		C=10000,
 		max_iter=10000,
 		penalty='l2',
 		random_state=74,
 		solver='sag'),
 	algorithm='SAMME',
 	learning_rate=0.1,
-	n_estimators=50).fit(X,y)
+	n_estimators=10).fit(X,y)
 
 adadtc = AdaBoostClassifier(
 	DecisionTreeClassifier(
@@ -284,10 +301,10 @@ joblib.dump(adarbf, "./models/adarbf.pkl")
 from sklearn.ensemble import VotingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 estimators = [
-	('radial',CalibratedClassifierCV(svmrbf).fit(X,y)),
-	('logistic',lr),
-	('multi',mlp),
-	('tree',dtc)]
+	('svmrbf',CalibratedClassifierCV(svmrbf).fit(X,y)),
+	('lr',lr),
+	('mlp',mlp),
+	('dtc',dtc)]
 hard_ensemble = VotingClassifier(
 	estimators,
 	voting='hard').fit(X,y)
@@ -303,10 +320,10 @@ soft_ensemble = VotingClassifier(estimators, voting='soft').fit(X,y)
 joblib.dump(soft_ensemble,"./models/soft_ensemble.pkl")
 
 # Weighted Voting
-
-scores = [2, 1, 2,2 ] # accuracies over weak learners
+scores = [4,1,8,1]
 
 weight_ensemble = VotingClassifier(estimators=estimators, voting='soft', weights=scores).fit(X,y)
+
 joblib.dump(weight_ensemble,"./models/weight_ensemble.pkl")
 
 ###################################################################
@@ -318,11 +335,13 @@ from sklearn.ensemble import StackingClassifier
 estimators = [("svm", svmrbf),("mlp",mlp),("dtc",dtc)]
 stack_1 = StackingClassifier(
 	estimators = estimators,
-	final_estimator = lr).fit(X, y)
-estimators = [("lr",lr),("svm",svmrbf),("mlp",mlp)]
+	stack_method = "predict_proba",
+	final_estimator = LogisticRegression()).fit(X, y)
+estimators = [("svm", svmrbf),("mlp",mlp),("dtc",dtc)]
 stack_2 = StackingClassifier(
 	estimators = estimators,
-	final_estimator = dtc).fit(X, y)
+	stack_method = "predict_proba",
+	final_estimator = lr).fit(X, y)
 
 joblib.dump(stack_1, "./models/stacking_1.pkl")
 joblib.dump(stack_2, "./models/stacking_2.pkl")

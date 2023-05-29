@@ -9,10 +9,10 @@ library(pilot)
 library(knitr)
 library(grid)
 library(cowplot)
-#library(igraph)
-#library(ggraph)
-#library(ggdendro)
-#library(dendextend)
+library(igraph)
+library(ggraph)
+library(ggdendro)
+library(dendextend)
 library(patchwork)
 #####################################################################
 theme_set(
@@ -52,7 +52,7 @@ mix <- read_csv("./Mix_BC.csv.gz")[,-c(1,2,8743)] %>%
 				'Atributo',
 				'Composición')) %>% 
 				unlist) %>% 
-	select(group,property, Class) 
+	select(group,property, Class)
 
 mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 	pivot_longer(
@@ -60,11 +60,10 @@ mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 		names_to = "aminoacidseq",
 		values_to = "frequence") %>%
 	mutate(
-		group = rep('Balanceado', 139800),
-		property = pmap(
-			.,
-			~ifelse(nchar(..2) <= 3,'Composición','Atributo')) %>%
-				unlist) %>%
+		group = rep('Balanceado', 128616),
+		property = pmap(.,
+			~ifelse(nchar(..2) > 3,'Atributo','Composición')) %>%
+			unlist) %>%
 	select(group,property, Class)
 
 # Merge datasets
@@ -129,9 +128,9 @@ scores <- df %>%
 		Coincidence = factor(Coincidence, levels=b$Coincidence)) %>%
 		with(table(Coincidence, Method))
 
-scores <- scores[rowSums(scores)>5,]
+scores <- scores[rowSums(scores)>7,]
 
-# export scores with > 5 frequences
+# export scores with > 7 frequences
 read_csv("Mix_BC.csv.gz") %>%
 	select(any_of(rownames(scores))) %>%
 	write_csv("Mix_BC_selected.csv")
@@ -151,8 +150,8 @@ tileplot <- df %>%
 	ggplot(aes(Method, Coincidence, fill= n)) + 
   geom_tile()+
   theme(
-  	axis.text.x=element_text(angle=90,size=5),
-  	axis.text.y=element_text(size=5),
+  	axis.text.x=element_text(angle=90,size=9),
+  	axis.text.y=element_text(size=8),
   	legend.position="none")+
   labs(x="Métodos", y="Coincidencias")
 
@@ -163,10 +162,11 @@ dendroplot <-
     theme_classic()+
     theme(
     	axis.text.y = element_blank(),
+    	axis.text.x = element_blank(),
     	axis.ticks = element_blank(),
     	axis.line = element_blank()
     	)+
-    labs(y="Distancia",x="")
+    labs(y="",x="")
 
 fss_comparison <- plot_grid(
 	tileplot, 
@@ -176,21 +176,15 @@ fss_comparison <- plot_grid(
 	align = "h",
 	scale=c(1,1.066)
 )
-layout<-c(area(1,1,2,1), area(1,2,3,3))
-balance <- warehouse+fss_comparison+
-	plot_layout(design=layout)+
-	plot_annotation(tag_levels="A")
 	
-ggsave("balance.pdf",
-				balance, 
-#				device = "pdf",
-				dpi="retina",
-				width = 4000, 
-				height = 2200,
-#				bg = "white", 
-				units = "px",
-				useDingbats=FALSE)
-#ggsave("balance.png",balance,dpi=320,width = 4000, height = 2200,bg = "white", units = "px")
+ggsave("fss.png",
+	fss_comparison, 
+	device = "png",
+	dpi=300,
+	width = 1900, 
+	height = 2100,
+	bg = "white", 
+	units = "px")
 
 # Optional plots
 

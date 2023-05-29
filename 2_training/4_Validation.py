@@ -12,7 +12,7 @@ import itertools
 
 # Load data
 bc = pd.read_csv("./Mix_BC_srbal.csv.gz")
-bc_input = bc.iloc[0:466, 0:350]
+bc_input = bc.iloc[0:466, 1:276]
 bc_output = bc['Class']
 
 # Metrics (Every model)
@@ -57,7 +57,7 @@ M3 = joblib.load("./models/weight_ensemble.pkl.gz")
 M4 = joblib.load("./models/stacking_1.pkl.gz")
 M5 = joblib.load("./models/stacking_2.pkl.gz")
 
-M6 = joblib.load("./models/bagrbf.pkl.gz")
+M6 = joblib.load("./models/bagsvm.pkl.gz")
 M7 = joblib.load("./models/baglr.pkl.gz")
 M8 = joblib.load("./models/bagmlp.pkl.gz")
 M9 = joblib.load("./models/bagdtc.pkl.gz")
@@ -65,7 +65,6 @@ M9 = joblib.load("./models/bagdtc.pkl.gz")
 M10 = joblib.load("./models/adarbf.pkl.gz")
 M11 = joblib.load("./models/adalr.pkl.gz")
 M12 = joblib.load("./models/adadtc.pkl.gz")
-
 
 models = [svmrbf, lr, mlp, dtc]
 bagmodels = [M6, M7, M8, M9]
@@ -143,9 +142,14 @@ size_M5, score_M5, tscore_M5, ft_M5,_ = learning_curve(M5, X, y, cv=10, train_si
 
 metrics = pd.DataFrame()
 metrics['train_size'] = np.concatenate((size_svm, size_lr, size_mlp, size_dtc, size_M6, size_M7, size_M8, size_M9, size_M10, size_M11, size_M12, size_M1, size_M2, size_M3, size_M4, size_M5))
+
 metrics['models'] = np.repeat(modelsname, 10)
+
 metrics = pd.concat(
-[metrics,pd.DataFrame(np.concatenate((score_svm, score_lr, score_mlp, score_M6, score_M7, score_M8, score_M9, score_M10, score_M11, score_M12, score_M1, score_M2, score_M3, score_M4, score_M5))), pd.DataFrame(np.concatenate((tscore_svm, tscore_lr, tscore_mlp, tscore_M6, tscore_M7, tscore_M8, tscore_M9, tscore_M10, tscore_M11, tscore_M12, tscore_M1, tscore_M2, tscore_M3, tscore_M4, score_M5))),pd.DataFrame(np.concatenate((ft_svm, ft_lr, ft_mlp, ft_M6, ft_M7, ft_M8, ft_M9, ft_M10, ft_M11, ft_M12, ft_M1, ft_M2, ft_M3, ft_M4, score_M5)))],axis=1)
+[metrics,
+pd.DataFrame(np.concatenate((score_svm, score_lr, score_mlp, score_dtc, score_M6, score_M7, score_M8, score_M9, score_M10, score_M11, score_M12, score_M1, score_M2, score_M3, score_M4, score_M5))), 
+pd.DataFrame(np.concatenate((tscore_svm, tscore_lr, tscore_mlp, tscore_dtc, tscore_M6, tscore_M7, tscore_M8, tscore_M9, tscore_M10, tscore_M11, tscore_M12, tscore_M1, tscore_M2, tscore_M3, tscore_M4, tscore_M5))),
+pd.DataFrame(np.concatenate((ft_svm, ft_lr, ft_mlp, ft_dtc, ft_M6, ft_M7, ft_M8, ft_M9, ft_M10, ft_M11, ft_M12, ft_M1, ft_M2, ft_M3, ft_M4, ft_M5)))],axis=1)
 metrics.columns = ['train_size','models']+['train_scores_fold_%d'% x for x in range(1,11)]+['validation_scores_fold_%d'% x for x in range(1,11)]+['fit_times_fold_%d'% x for x in range(1,11)]
 ############################################################
 # Tabla comparativa para ver cual es mejor
