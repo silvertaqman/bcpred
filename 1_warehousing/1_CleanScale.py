@@ -53,7 +53,7 @@ CP.to_csv("PCAComponents.csv")
 EV = pd.DataFrame(pca.explained_variance_ratio_.T)
 EV.to_csv("PCAVarianceRatios.csv")
 
-## We can explain 99 percent of variance with nearly 350 feats
+## We can explain 99 percent of variance with nearly 355 feats
 ## Now we use FSS with chi2, Anova-F and mutual-info 
 
 from scipy.stats import pearsonr

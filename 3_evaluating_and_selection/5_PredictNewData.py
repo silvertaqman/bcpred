@@ -41,7 +41,6 @@ from sklearn.metrics import accuracy_score, f1_score, log_loss, mean_absolute_er
 X = [Xm, Xi, Xr]
 y = [ym, yi, yr]
 
-acc=[accuracy_score(model.predict(X[i]),y[i]) for i in range(3)]
 # model acc is higher
 mae=[mean_absolute_error(model.predict(X[i]),y[i]) for i in range(3)]
 print(pd.DataFrame([acc,mae]))

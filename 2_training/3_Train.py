@@ -57,7 +57,7 @@ joblib.dump(svmrbf, "./models/bc_svmrbf.pkl")
 
 # Logistic regression
 param_grid = {
-        'C': np.logspace(-4, 4, 50),
+        'C': np.logspace(-4, 4, 100),
         'penalty': ['none', 'l2'],
         'solver': ['newton-cg', 'lbfgs', 'sag'],
         'random_state': [74],
@@ -103,9 +103,9 @@ from sklearn.tree import DecisionTreeClassifier
 param_grid_dtc = {
 	'criterion': ['gini', 'entropy'],
 	'splitter': ['best','random'],
-	'max_depth':range(2,100,20), 
-	'min_samples_split':range(2,100,20), 
-	'min_samples_leaf':range(2,100,20), 
+	'max_depth':range(2,100,1), 
+	'min_samples_split':range(2,100,1), 
+	'min_samples_leaf':[2], 
 	'max_features':['auto', 'sqrt', 'log2'], 
 	'random_state':[74]
 }
@@ -130,7 +130,7 @@ joblib.dump(dtc, "./models/bc_dtc.pkl")
 from sklearn.ensemble import BaggingClassifier
 
 param_grid = {
-    'max_samples' : [i/100 for i in range(3,50,5)]
+    'max_samples' : [i/100 for i in range(3,50,1)]
 }
 
 gs_bagsvm = GridSearchCV(
@@ -198,17 +198,17 @@ adalr = AdaBoostClassifier(
 # Ada requires a sample weight implementation
 # set parameters
 param_grid_rbf = {
-	'n_estimators': (10, 50),                  
+	'n_estimators': (10, 20, 30, 40, 50),                  
 	'learning_rate': (0.001, 0.01, 0.1),
 	'algorithm':['SAMME'],
-	'base_estimator__C': np.logspace(-3,3,5),
-	'base_estimator__gamma': np.logspace(-4,2,5)}
+	'base_estimator__C': np.logspace(-3,3,25),
+	'base_estimator__gamma': np.logspace(-4,2,25)}
 
 param_grid_lr = {
-	'n_estimators': (10, 50),                  
+	'n_estimators': (10, 20, 30, 40, 50),                  
 	'learning_rate': (0.001, 0.01, 0.1),
 	'algorithm':['SAMME'],
-	'base_estimator__C': np.logspace(-3,4,5),
+	'base_estimator__C': np.logspace(-3,4,25),
 	'base_estimator__penalty': ['l2'],
 	'base_estimator__solver': ['sag'],
 	'base_estimator__random_state': [74],
@@ -220,9 +220,9 @@ param_grid_dtc = {
 	'algorithm':['SAMME'],
 	'base_estimator__criterion': ['gini', 'entropy'],
 	'base_estimator__splitter': ['best','random'],
-	'base_estimator__max_depth':range(2,100,5), 
-	'base_estimator__min_samples_split':range(2,100,5), 
-	'base_estimator__min_samples_leaf':range(2,100,5), 
+	'base_estimator__max_depth':range(2,100,1), 
+	'base_estimator__min_samples_split':range(2,100,1), 
+	'base_estimator__min_samples_leaf':[2], 
 	'base_estimator__max_features':['sqrt', 'log2'], 
 	'base_estimator__random_state':[74]
 }
