@@ -14,6 +14,8 @@ library(ggraph)
 library(ggdendro)
 library(dendextend)
 library(patchwork)
+library(factoextra)
+library(zoo)
 #####################################################################
 theme_set(
 	theme_pilot()+
@@ -99,7 +101,7 @@ ggsave("balance.png",
 	width = 3200, 
 	height = 1600,
 	units = "px")
-
+#####################################################################
 # FSS
 # TilePlot
 df <- read_csv("./selection.csv.gz") %>%
@@ -128,7 +130,7 @@ scores <- df %>%
 		Coincidence = factor(Coincidence, levels=b$Coincidence)) %>%
 		with(table(Coincidence, Method))
 
-scores <- scores[rowSums(scores)>7,]
+scores <- scores[which(rowSums(scores)>4),]
 
 # export scores with > 7 frequences
 read_csv("Mix_BC.csv.gz") %>%
@@ -138,35 +140,93 @@ read_csv("Mix_BC.csv.gz") %>%
 # dendrogram
 
 d = dist(scores, method = "binary")
+cut <- 4  # Number of clusters
 hc = hclust(d, method="ward.D")
-dendro <- as.dendrogram(hc)
+dendr <- dendro_data(hc, type = "rectangle") 
+clust <- cutree(hc, k = cut)               # find 'cut' clusters
+clust.df <- data.frame(label = names(clust), cluster = clust)
+
+# Split dendrogram into upper grey section and lower coloured section
+height <- unique(dendr$segments$y)[order(unique(dendr$segments$y), decreasing = TRUE)]
+cut.height <- mean(c(height[cut], height[cut-1]))
+dendr$segments$line <- ifelse(dendr$segments$y == dendr$segments$yend &
+   dendr$segments$y > cut.height, 1, 2)
+dendr$segments$line <- ifelse(dendr$segments$yend  > cut.height, 1, dendr$segments$line)
+
+# Number the clusters
+dendr$segments$cluster <- c(-1, diff(dendr$segments$line))
+change <- which(dendr$segments$cluster == 1)
+for (i in 1:cut) dendr$segments$cluster[change[i]] = i + 1
+dendr$segments$cluster <-  ifelse(dendr$segments$line == 1, 1, 
+             ifelse(dendr$segments$cluster == 0, NA, dendr$segments$cluster))
+dendr$segments$cluster <- na.locf(dendr$segments$cluster) 
+
+# Consistent numbering between segment$cluster and label$cluster
+clust.df$label <- factor(clust.df$label, levels = levels(dendr$labels$label))
+clust.df <- arrange(clust.df, label)
+clust.df$cluster <- factor((clust.df$cluster), levels = unique(clust.df$cluster), labels = (1:cut) + 1)
+dendr[["labels"]] <- merge(dendr[["labels"]], clust.df, by = "label")
+
+# Positions for cluster labels
+n.rle <- rle(dendr$segments$cluster)
+N <- cumsum(n.rle$lengths)
+N <- N[seq(1, length(N), 2)] + 1
+N.df <- dendr$segments[N, ]
+N.df$cluster <- N.df$cluster - 1
+
+# clusterize features 
+
+dd <- read_csv("Mix_BC_sr.csv.gz") %>% 
+        select(!c(...1, Class)) 
+
+k2 <- kmeans(t(dd), centers = 2, nstart = 25)
+p <- fviz_cluster(k2, data = t(dd))
+
+names <- p$data$name
+cluster <- p$data$cluster
+
+# set a value if get a coincidence ?mutate
 
 tileplot <- df %>%
 	count(Method, Coincidence) %>%
 	mutate(
 #		Method = factor(Method, levels=a$Method),
-		Coincidence = factor(Coincidence, levels=partition_leaves(dendro)[[1]])) %>%
+		Coincidence = factor(
+			Coincidence, 
+			levels=partition_leaves(as.dendrogram(hc))[[1]])) %>%
+	group_by(n) %>%
+	mutate(Class = ifelse(
+		Coincidence %in% names[which(cluster==2)],
+		"Positivo",
+		"Negativo")) %>%
 	drop_na() %>%
-	ggplot(aes(Method, Coincidence, fill= n)) + 
+	ggplot(
+		aes(Method,Coincidence, 
+			fill = n,
+			alpha = ifelse(Class=="Negativo",0.85,NA))) + 
   geom_tile()+
   theme(
   	axis.text.x=element_text(angle=90,size=9),
   	axis.text.y=element_text(size=8),
   	legend.position="none")+
-  labs(x="Métodos", y="Coincidencias")
+  labs(x="Métodos", y="")
 
-dendroplot <- 
-    ggdendrogram(
-        dendro,
-        rotate=TRUE)+
-    theme_classic()+
+dendroplot <- ggplot() + 
+   geom_segment(data = segment(dendr), 
+      aes(x=x, y=y, xend=xend, yend=yend, size=factor(line), colour=factor(cluster)), 
+      lineend = "square", show.legend = FALSE) + 
+   scale_color_pilot() +
+   scale_size_manual(values = c(.1, 1))+
+   labs(x = NULL, y = NULL) +
+   coord_flip() +
     theme(
-    	axis.text.y = element_blank(),
-    	axis.text.x = element_blank(),
-    	axis.ticks = element_blank(),
-    	axis.line = element_blank()
-    	)+
-    labs(y="",x="")
+    	axis.text.x = element_text(angle=90,color = "gray12", size = 12),
+    	axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.grid = element_blank())
 
 fss_comparison <- plot_grid(
 	tileplot, 
@@ -181,8 +241,8 @@ ggsave("fss.png",
 	fss_comparison, 
 	device = "png",
 	dpi=300,
-	width = 1900, 
-	height = 2100,
+	width = 1800, 
+	height = 2200,
 	bg = "white", 
 	units = "px")
 
