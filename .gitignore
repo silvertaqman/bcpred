@@ -1,2 +1,17 @@
+<<<<<<< HEAD
 ~/Github/spencer/2_trainig/gridsearch/*
 ~/Github/spencer/2_trainig/models/bagmlp.pkl.gz
+=======
+/home/adonis.cedeno/BCPred/svm
+/home/adonis.cedeno/BCPred/3_evaluating
+/home/adonis/bcpred/3_evaluating
+/home/adonis/bcpred/2_training/aabarplot.pdf
+/home/adonis/bcpred/2_training/outliers.R
+/home/adonis/bcpred/1_warehousing/invariant_features.txt
+/home/adonis/bcpred/1_warehousing/minmax.pkl
+/home/adonis/bcpred/2_training/gridsearch/contour.pdf
+/home/adonis/bcpred/2_training/gridsearch/firstsecond.pdf
+/home/adonis/bcpred/2_training/gridsearch/scatter.lin.pdf
+/home/adonis/bcpred/2_training/gridsearch/scatter.pdf
+/home/adonis/bcpred/2_training/gridsearch/third.pdf
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd

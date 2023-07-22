@@ -20,4 +20,14 @@ Xs, ys = smote.fit_resample(X.values, y)
 # Export smoted, balanced data
 cancer = pd.DataFrame(Xs,columns=Features)
 cancer['Class'] = ys # add class column
+<<<<<<< HEAD
+=======
+cancer.to_csv('Mix_BreastCancer_srbal.csv', index=False)
+smote = SMOTE(random_state=74)
+X, y = smote.fit_resample(X.values, y)
+    
+# Export smoted, balanced data
+cancer = pd.DataFrame(X,columns=Features)
+cancer['Class'] = y # add class column
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 cancer.to_csv('../2_training/Mix_BC_srbal.csv', index=False)

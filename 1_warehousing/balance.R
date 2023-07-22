@@ -9,6 +9,7 @@ library(pilot)
 library(knitr)
 library(grid)
 library(cowplot)
+<<<<<<< HEAD
 library(igraph)
 library(ggraph)
 library(ggdendro)
@@ -16,6 +17,13 @@ library(dendextend)
 library(patchwork)
 library(factoextra)
 library(zoo)
+=======
+#library(igraph)
+#library(ggraph)
+#library(ggdendro)
+#library(dendextend)
+library(patchwork)
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 #####################################################################
 theme_set(
 	theme_pilot()+
@@ -54,7 +62,11 @@ mix <- read_csv("./Mix_BC.csv.gz")[,-c(1,2,8743)] %>%
 				'Atributo',
 				'Composición')) %>% 
 				unlist) %>% 
+<<<<<<< HEAD
 	select(group,property, Class)
+=======
+	select(group,property, Class) 
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 
 mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 	pivot_longer(
@@ -62,10 +74,18 @@ mixbal <- read_csv("../2_training/Mix_BC_srbal.csv.gz") %>%
 		names_to = "aminoacidseq",
 		values_to = "frequence") %>%
 	mutate(
+<<<<<<< HEAD
 		group = rep('Balanceado', 128616),
 		property = pmap(.,
 			~ifelse(nchar(..2) > 3,'Atributo','Composición')) %>%
 			unlist) %>%
+=======
+		group = rep('Balanceado', 139800),
+		property = pmap(
+			.,
+			~ifelse(nchar(..2) <= 3,'Composición','Atributo')) %>%
+				unlist) %>%
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 	select(group,property, Class)
 
 # Merge datasets
@@ -101,7 +121,11 @@ ggsave("balance.png",
 	width = 3200, 
 	height = 1600,
 	units = "px")
+<<<<<<< HEAD
 #####################################################################
+=======
+
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 # FSS
 # TilePlot
 df <- read_csv("./selection.csv.gz") %>%
@@ -130,13 +154,20 @@ scores <- df %>%
 		Coincidence = factor(Coincidence, levels=b$Coincidence)) %>%
 		with(table(Coincidence, Method))
 
+<<<<<<< HEAD
 scores <- scores[which(rowSums(scores)>4),]
 
 # export scores with > 7 frequences
+=======
+scores <- scores[rowSums(scores)>5,]
+
+# export scores with > 5 frequences
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 read_csv("Mix_BC.csv.gz") %>%
 	select(any_of(rownames(scores))) %>%
 	write_csv("Mix_BC_selected.csv")
 
+<<<<<<< HEAD
 d = dist(scores, method = "binary")
 cut <- 4  # Number of clusters
 hc = hclust(d, method="ward.D")
@@ -184,11 +215,19 @@ names <- p$data$name
 cluster <- p$data$cluster
 
 # set a value if get a coincidence ?mutate
+=======
+# dendrogram
+
+d = dist(scores, method = "binary")
+hc = hclust(d, method="ward.D")
+dendro <- as.dendrogram(hc)
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 
 tileplot <- df %>%
 	count(Method, Coincidence) %>%
 	mutate(
 #		Method = factor(Method, levels=a$Method),
+<<<<<<< HEAD
 		Coincidence = factor(
 			Coincidence, 
 			levels=partition_leaves(as.dendrogram(hc))[[1]])) %>%
@@ -225,6 +264,29 @@ dendroplot <- ggplot() +
         axis.title.y = element_blank(),
         panel.background = element_rect(fill = "white"),
         panel.grid = element_blank())
+=======
+		Coincidence = factor(Coincidence, levels=partition_leaves(dendro)[[1]])) %>%
+	drop_na() %>%
+	ggplot(aes(Method, Coincidence, fill= n)) + 
+  geom_tile()+
+  theme(
+  	axis.text.x=element_text(angle=90,size=5),
+  	axis.text.y=element_text(size=5),
+  	legend.position="none")+
+  labs(x="Métodos", y="Coincidencias")
+
+dendroplot <- 
+    ggdendrogram(
+        dendro,
+        rotate=TRUE)+
+    theme_classic()+
+    theme(
+    	axis.text.y = element_blank(),
+    	axis.ticks = element_blank(),
+    	axis.line = element_blank()
+    	)+
+    labs(y="Distancia",x="")
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 
 fss_comparison <- plot_grid(
 	tileplot, 
@@ -234,6 +296,7 @@ fss_comparison <- plot_grid(
 	align = "h",
 	scale=c(1,1.066)
 )
+<<<<<<< HEAD
 	
 ggsave("fss.png",
 	fss_comparison, 
@@ -243,6 +306,23 @@ ggsave("fss.png",
 	height = 2200,
 	bg = "white", 
 	units = "px")
+=======
+layout<-c(area(1,1,2,1), area(1,2,3,3))
+balance <- warehouse+fss_comparison+
+	plot_layout(design=layout)+
+	plot_annotation(tag_levels="A")
+	
+ggsave("balance.pdf",
+				balance, 
+#				device = "pdf",
+				dpi="retina",
+				width = 4000, 
+				height = 2200,
+#				bg = "white", 
+				units = "px",
+				useDingbats=FALSE)
+#ggsave("balance.png",balance,dpi=320,width = 4000, height = 2200,bg = "white", units = "px")
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
 
 # Optional plots
 
@@ -285,6 +365,7 @@ ggplot() +
   theme_pilot() + 
   theme(legend.position="none") +
   coord_equal()
+<<<<<<< HEAD
  
  # Frequencies
  # dendrogram
@@ -307,3 +388,5 @@ names(tabla[which(tabla < mean(tabla)-qt(0.99, 19)*sd(tabla)/sqrt(20))])
 
 # Codons
 codones <- data.frame(codon=c("CAA","CAG", "AAA", "AAG", "UUA","UUG","CUU","CUC","CUA","CUG","CCU","CAC","CAA","CAG","GUU","GUC","GUA","GUG"), amino=c("G","G","K","K","L","L","L","L","L","L","P","P","P","P","V","V","V","V"))
+=======
+>>>>>>> 04b0460809710406095b4e1a427dc0fcdc9198cd
