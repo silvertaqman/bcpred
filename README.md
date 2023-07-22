@@ -1,6 +1,6 @@
 # Spencer: Accurate diagnosis criteria prediction for Breast Cancer MALDITOF samples.
 
-![Performance plot of the ensemble model](./performance.png)
+![Performance plot of the ensemble model](/performance.png)
 
 ## Introduction
 This repository contains workflow and data required to train twelve models based on Biomarker Identification for Protein Sequences obtained through MALDI-TOF Mass Spectrometry. Also, contains the ready-to-use ML model accesible through Python (>=3.9) and related packages. The implementation allows users to get breast cancer predictions by applying a Bagging-SVM model over Proteic Sequences. 
