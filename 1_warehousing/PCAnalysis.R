@@ -39,11 +39,11 @@ ev <- variance %>%
 #	filter(varatio > 0.94, pc > 290) %>% 
 	ggplot(aes(x=pc, y=varatio, group=1))+
 		geom_line(color="blue")+
-		geom_vline(xintercept = 277, color="blue")+
+		geom_vline(xintercept = 275, color="blue")+
 		geom_hline(yintercept = 0.93, color="red")+
 		geom_bar(stat="identity",alpha=0.25,fill="red")+
 		labs(x="Componente principal", y="Varianza Acumulada")+
-		scale_x_continuous(breaks = sort(c(0,50,100,200,277,300)))+
+		scale_x_continuous(breaks = sort(c(0,50,100,200,275,300)))+
 		scale_y_continuous(breaks = sort(c(0,0.25,0.50,0.75,0.93,1.0)))
 
 # Merge two plots

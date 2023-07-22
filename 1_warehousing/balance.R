@@ -137,8 +137,6 @@ read_csv("Mix_BC.csv.gz") %>%
 	select(any_of(rownames(scores))) %>%
 	write_csv("Mix_BC_selected.csv")
 
-# dendrogram
-
 d = dist(scores, method = "binary")
 cut <- 4  # Number of clusters
 hc = hclust(d, method="ward.D")
@@ -287,3 +285,25 @@ ggplot() +
   theme_pilot() + 
   theme(legend.position="none") +
   coord_equal()
+ 
+ # Frequencies
+ # dendrogram
+
+tabla <- b %>% 
+	select(!n) %>%
+	transmute(Co = as.character(Coincidence)) %>%
+	filter(nchar(Co) < 4) %>%
+	separate(Co, c("rem", "A", "AA", "AAA"), "") %>%
+	select(!rem) %>%
+	pivot_longer(everything(), names_to=NULL, values_to="amino") %>%
+	drop_na(amino) %>%
+	group_by(amino) %>%
+	table()
+
+barplot(tabla)
+shapiro.test(tabla)
+names(tabla[which(tabla > mean(tabla)+qt(0.99, 19)*sd(tabla)/sqrt(20))])
+names(tabla[which(tabla < mean(tabla)-qt(0.99, 19)*sd(tabla)/sqrt(20))])
+
+# Codons
+codones <- data.frame(codon=c("CAA","CAG", "AAA", "AAG", "UUA","UUG","CUU","CUC","CUA","CUG","CCU","CAC","CAA","CAG","GUU","GUC","GUA","GUG"), amino=c("G","G","K","K","L","L","L","L","L","L","P","P","P","P","V","V","V","V"))

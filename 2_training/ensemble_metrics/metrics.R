@@ -10,8 +10,8 @@ library(patchwork)
 theme_set(
 	theme(
 		  # Use gray text for the region names
-		  axis.text.x = element_text(color = "gray12", size = 11),
-		  axis.text.y = element_text(color = "gray12", size = 11),
+		  axis.text.x = element_text(color = "gray12", size = 8),
+		  axis.text.y = element_text(color = "gray12", size = 12),
 		  # Set default color and font family for the text
 		  text = element_text(color = "gray12"),
 		  # Make the background white and remove extra grid lines
@@ -62,7 +62,7 @@ boxmetrix <- function(x){
 	x %>%
 		ggplot(aes(x=Test, y=Metric, fill=factor(model)))+
 			geom_boxplot()+
-			facet_wrap(~model)+
+			facet_wrap(~model, scales="free_x")+
 			scale_fill_pilot()+
 			theme(legend.position="none")+
 			labs(fill = 'Algorithm')+
@@ -80,7 +80,7 @@ datos <- mutate_if(datos, is.character, as.factor)%>%
 
 levels(datos$Test) <- c("ACC","F1","PRE","REC","AUC")
 
-ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2500, height = 1500, bg = "white", units = "px")
+ggsave("Metrics.png",boxmetrix(datos), dpi=300, width = 2400, height = 1600, bg = "white", units = "px")
 
 ###############################
 # ROC-Curve
