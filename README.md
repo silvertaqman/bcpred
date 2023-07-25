@@ -18,7 +18,9 @@ Data from [Soto, (2020)](https://github.com/muntisa/neural-networks-for-breast-c
  2. **Model Training**: Hyperparameter setting, Training and validation of metrics. The refined model is evaluated with three partitions (70:20:10). The four best classifiers from muntisa paper are selected, trained and exported: **Decision Tree**, Support Vector Machine with **Radial** kernel basis function, **Logistic Regression** and **multilayer perceptron**. Cross-validation and stratified cross-validation processes are executed to estimate accuracy per model. Then, accuracy, recall, precision, F1 and roc-auc scores are calculated from the confusion matrix and get exported. The ensemble process includes twelve models for which Bagging SVMs have the best properties for prediction.
 
 	a) *Ensemble metrics*
+	
 	b) *Models*
+	
 	c) *Supplemental information*
  
  3. **Evaluation of the selected model**: Experimental setting for the best model. 
@@ -34,7 +36,7 @@ Data from [Soto, (2020)](https://github.com/muntisa/neural-networks-for-breast-c
 * joblib (> 1.1)
 * r-base (> 4.0)
 * Rcpi (>1.2)
-* Optional: Run through a Ubuntu terminal.
+* Optional: Run through Ubuntu terminal.
 
 # How to use
 
